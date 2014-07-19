@@ -1,5 +1,13 @@
 *.swo
 *.swp
+.ninja_deps
+.ninja_log
 /.clang_complete
+/CMakeCache.txt
+/CMakeFiles
+/bin
+/build.ninja
+/cmake_install.cmake
 /compile_commands.json
+/rules.ninja
 /tags
