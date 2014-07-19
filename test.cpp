@@ -1,3 +1,5 @@
+#include <unistd.h>
+
 #include <iostream>
 #include <vector>
 
@@ -79,8 +81,10 @@ int main()
 
 		std::vector<std::string> cmd_line_args;
 
+		std::string filename = std::string(get_current_dir_name()) + "/test.cpp";
+
 		CompilationDatabasePtr db = CompilationDatabase::FromDirectory("./");
-		CompileCommandsPtr cmds = db->GetCompileCommands("/home/koplyarov/work/clang_test/test.cpp");
+		CompileCommandsPtr cmds = db->GetCompileCommands(filename);
 		for (size_t i = 0; i < cmds->GetSize(); ++i)
 		{
 			CompileCommandPtr cmd = cmds->GetCompileCommand(i);
@@ -95,7 +99,7 @@ int main()
 		}
 
 		IndexPtr index = Index::Create(true, true);
-		TranslationUnitPtr tu = index->ParseTranslationUnit("/home/koplyarov/work/clang_test/test.cpp", cmd_line_args, std::vector<UnsavedFile>(), 0);
+		TranslationUnitPtr tu = index->ParseTranslationUnit(filename, cmd_line_args, std::vector<UnsavedFile>(), 0);
 		tu->GetCursor().VisitChildren(TagsVisitor());
 		//tu->GetCursor().VisitChildren(TestVisitor());
 	}
