@@ -1,9 +1,10 @@
 #include <unistd.h>
 
+#include <clang/CompilationDatabase.h>
+#include <clang/Index.h>
+
 #include <iostream>
 #include <vector>
-
-#include <ClangWrappers.h>
 
 
 using namespace clang;
@@ -55,18 +56,22 @@ public:
 
 	CXChildVisitResult Visit(Cursor c, Cursor p) const
 	{
-		std::vector<CXCursorKind> definitely_not = { CXCursor_CXXAccessSpecifier, CXCursor_TemplateTypeParameter, CXCursor_UnexposedDecl };
-		std::vector<CXCursorKind> definitely_yes = { CXCursor_FunctionDecl, CXCursor_CXXMethod, CXCursor_FunctionTemplate };
+		std::vector<CXCursorKind> definitely_nots = { CXCursor_CXXAccessSpecifier, CXCursor_TemplateTypeParameter, CXCursor_UnexposedDecl };
+		std::vector<CXCursorKind> funcs = { CXCursor_FunctionDecl, CXCursor_CXXMethod, CXCursor_FunctionTemplate };
 
 		std::string new_parent = _parent;
 
-		if (c.GetLocation().IsFromMainFile() && ((c.IsDefinition() && std::find(definitely_not.begin(), definitely_not.end(), c.GetKind()) == definitely_not.end()) || std::find(definitely_yes.begin(), definitely_yes.end(), c.GetKind()) != definitely_yes.end()))
+		bool definitely_not = std::find(definitely_nots.begin(), definitely_nots.end(), c.GetKind()) == definitely_nots.end();
+		bool is_func = std::find(funcs.begin(), funcs.end(), c.GetKind()) != funcs.end();
+
+		if (c.GetLocation().IsFromMainFile() && ((c.IsDefinition() && definitely_not) || is_func))
 		{
 			std::cout << _parent << c.GetSpelling() << "\t" << c.GetLocation().GetFile().GetFileName() << "" << std::endl;
 			new_parent += c.GetSpelling() + "::";
 		}
 
-		c.VisitChildren(TagsVisitor(new_parent));
+		if (!is_func && c.GetLocation().IsFromMainFile())
+			c.VisitChildren(TagsVisitor(new_parent));
 
 		return CXChildVisit_Continue;
 	}
@@ -82,6 +87,7 @@ int main()
 		std::vector<std::string> cmd_line_args;
 
 		std::string filename = std::string(get_current_dir_name()) + "/test.cpp";
+		std::cout << "filename: " << filename << std::endl;
 
 		CompilationDatabasePtr db = CompilationDatabase::FromDirectory("./");
 		CompileCommandsPtr cmds = db->GetCompileCommands(filename);
