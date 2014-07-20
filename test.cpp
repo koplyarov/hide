@@ -1,20 +1,22 @@
-#include <unistd.h>
+#include <iostream>
+#include <fstream>
+#include <vector>
+
+#include <boost/filesystem.hpp>
+#include <boost/regex.hpp>
 
 #include <clang/CompilationDatabase.h>
 #include <clang/Index.h>
 
-#include <iostream>
-#include <vector>
-
 
 using namespace clang;
 
-class TestVisitor : public VisitorBase<TestVisitor>
+class DumpVisitor : public VisitorBase<DumpVisitor>
 {
 	std::string _indent;
 
 public:
-	TestVisitor(const std::string& indent = "")
+	DumpVisitor(const std::string& indent = "")
 		: _indent(indent)
 	{ }
 
@@ -39,25 +41,125 @@ public:
 			std::cout << std::endl;
 		}
 
-		c.VisitChildren(TestVisitor(_indent + "  "));
+		c.VisitChildren(DumpVisitor(_indent + "  "));
 
 		return CXChildVisit_Continue;
 	}
 };
 
-class TagsVisitor : public VisitorBase<TagsVisitor>
+
+class FileReader
 {
-	std::string _parent;
+private:
+	std::string		_filename;
 
 public:
-	TagsVisitor(const std::string& parent = "")
-		: _parent(parent)
+	FileReader(const std::string& filename) : _filename(filename) { }
+
+	std::string ReadLine(size_t lineNum) const
+	{
+		std::fstream file(_filename);
+		size_t line_num = 0;
+		std::string res;
+		do
+		{ CHECK(std::getline(file, res, '\n'), std::runtime_error("Could not read line from a file!")); }
+		while (line_num++ < lineNum);
+		return res;
+	}
+};
+DECLARE_PTR(FileReader);
+
+namespace fs = boost::filesystem;
+
+fs::path relativePath( const fs::path &path, const fs::path &relative_to )
+{
+    // create absolute paths
+    fs::path p = fs::absolute(path);
+    fs::path r = fs::absolute(relative_to);
+
+    // if root paths are different, return absolute path
+    if( p.root_path() != r.root_path() )
+        return p;
+
+    // initialize relative path
+    fs::path result;
+
+    // find out where the two paths diverge
+    fs::path::const_iterator itr_path = p.begin();
+    fs::path::const_iterator itr_relative_to = r.begin();
+    while( *itr_path == *itr_relative_to && itr_path != p.end() && itr_relative_to != r.end() ) {
+        ++itr_path;
+        ++itr_relative_to;
+    }
+
+    // add "../" for each remaining token in relative_to
+    if( itr_relative_to != r.end() ) {
+        ++itr_relative_to;
+        while( itr_relative_to != r.end() ) {
+            result /= "..";
+            ++itr_relative_to;
+        }
+    }
+
+    // add remaining path
+    while( itr_path != p.end() ) {
+        result /= *itr_path;
+        ++itr_path;
+    }
+
+    return result;
+}
+
+
+class TagEntry
+{
+private:
+	FileReaderPtr				_fileReader;
+	std::string					_name;
+	boost::filesystem::path		_filename;
+	std::string					_exCmd;
+
+public:
+	TagEntry(Cursor c)
+		:	_fileReader(new FileReader(c.GetLocation().GetFile().GetFileName())),
+			_name(c.GetSpelling()),
+			_filename(c.GetLocation().GetFile().GetFileName()),
+			_exCmd(MakeExCommand(c.GetLocation()))
+	{ }
+
+	void WriteToFile(std::ostream& s) const
+	{ s << _name << '\t' << relativePath(_filename, boost::filesystem::current_path()) << '\t' << _exCmd << std::endl; }
+
+	bool operator < (const TagEntry& other) const
+	{ return _name < other._name; }
+
+private:
+	std::string MakeExCommand(const SourceLocation& loc)
+	{
+		static boost::regex escape_re("([/])", boost::regex_constants::extended);
+		std::string line =  _fileReader->ReadLine(loc.GetLineNum() - 1);
+		return "/^" + boost::regex_replace(line, escape_re, "\\\\$1") + "$/";
+	}
+};
+
+
+typedef std::vector<TagEntry>	Tags;
+
+
+class TagsVisitor : public VisitorBase<TagsVisitor>
+{
+	Tags*			_tags;
+	std::string		_parent;
+
+public:
+	TagsVisitor(Tags& tags, const std::string& parent = "")
+		: _tags(&tags), _parent(parent)
 	{ }
 
 	CXChildVisitResult Visit(Cursor c, Cursor p) const
 	{
 		std::vector<CXCursorKind> definitely_nots = { CXCursor_CXXAccessSpecifier, CXCursor_TemplateTypeParameter, CXCursor_UnexposedDecl };
-		std::vector<CXCursorKind> funcs = { CXCursor_FunctionDecl, CXCursor_CXXMethod, CXCursor_FunctionTemplate };
+		std::vector<CXCursorKind> funcs = { CXCursor_FunctionDecl, CXCursor_CXXMethod, CXCursor_FunctionTemplate, CXCursor_Constructor };
 
 		std::string new_parent = _parent;
 
@@ -66,12 +168,12 @@ public:
 
 		if (c.GetLocation().IsFromMainFile() && ((c.IsDefinition() && definitely_not) || is_func))
 		{
-			std::cout << _parent << c.GetSpelling() << "\t" << c.GetLocation().GetFile().GetFileName() << "" << std::endl;
+			_tags->push_back(TagEntry(c));
 			new_parent += c.GetSpelling() + "::";
 		}
 
 		if (!is_func && c.GetLocation().IsFromMainFile())
-			c.VisitChildren(TagsVisitor(new_parent));
+			c.VisitChildren(TagsVisitor(*_tags, new_parent));
 
 		return CXChildVisit_Continue;
 	}
@@ -86,7 +188,7 @@ int main()
 
 		std::vector<std::string> cmd_line_args;
 
-		std::string filename = std::string(get_current_dir_name()) + "/test.cpp";
+		std::string filename = (boost::filesystem::current_path() / "test.cpp").native();
 		std::cout << "filename: " << filename << std::endl;
 
 		CompilationDatabasePtr db = CompilationDatabase::FromDirectory("./");
@@ -94,7 +196,7 @@ int main()
 		for (size_t i = 0; i < cmds->GetSize(); ++i)
 		{
 			CompileCommandPtr cmd = cmds->GetCompileCommand(i);
-			std::cout << "cmd: " << cmd->GetDirectory() << std::endl;
+			std::cout << "dir: " << cmd->GetDirectory() << std::endl;
 			std::cout << "args: " << std::endl;
 			for (size_t j = 0; j < cmd->GetNumArgs(); ++j)
 			{
@@ -104,10 +206,37 @@ int main()
 			}
 		}
 
+		std::vector<std::string> builtin_includes = {
+			"/usr/include",
+			"/usr/lib/llvm-3.5/include",
+			"/usr/include/c++/4.8",
+			"/usr/include/x86_64-linux-gnu/c++/4.8",
+			"/usr/include/c++/4.8/backward",
+			//"/usr/lib/gcc/x86_64-linux-gnu/4.8/include",
+			"/usr/local/include",
+			"/usr/lib/gcc/x86_64-linux-gnu/4.8/include-fixed",
+			"/usr/include/x86_64-linux-gnu",
+			"/usr/lib/llvm-3.5/lib/clang/3.5/include"
+		};
+
+		std::transform(builtin_includes.begin(), builtin_includes.end(), std::back_inserter(cmd_line_args), [] (const std::string& p) { return "-I" + p; });
+
 		IndexPtr index = Index::Create(true, true);
 		TranslationUnitPtr tu = index->ParseTranslationUnit(filename, cmd_line_args, std::vector<UnsavedFile>(), 0);
-		tu->GetCursor().VisitChildren(TagsVisitor());
-		//tu->GetCursor().VisitChildren(TestVisitor());
+
+		Tags tags;
+		tu->GetCursor().VisitChildren(TagsVisitor(tags));
+
+		std::sort(tags.begin(), tags.end());
+
+		for (TagEntry t: tags)
+			t.WriteToFile(std::cout);
+
+		//tu->GetCursor().VisitChildren(DumpVisitor());
+
+		std::cout << "Memory used for this translation unit: " << tu->GetResourceUsage().GetTotal() << std::endl;
+		tu->Reparse(std::vector<UnsavedFile>(), 0);
+		std::cout << "Memory used for this translation unit: " << tu->GetResourceUsage().GetTotal() << std::endl;
 	}
 	catch (const std::exception& ex)
 	{
