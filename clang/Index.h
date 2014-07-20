@@ -55,7 +55,13 @@ namespace clang
 	BEGIN_CLANG_WRAPPER_NO_DISPOSE(SourceLocation)
 		static SourceLocation GetNull() { return SourceLocation(clang_getNullLocation()); }
 
+		void GetParams(File& outFile, unsigned& outLine, unsigned& outColumn, unsigned& outOffset)
+		{ CXFile f; clang_getExpansionLocation(_raw, &f, &outLine, &outColumn, &outOffset); outFile = f; }
+
 		File GetFile() const { CXFile res; clang_getExpansionLocation(_raw, &res, NULL, NULL, NULL); return res; }
+		size_t GetLineNum() const { unsigned res; clang_getExpansionLocation(_raw, NULL, &res, NULL, NULL); return res; }
+		size_t GetColumnNum() const { unsigned res; clang_getExpansionLocation(_raw, NULL, NULL, &res, NULL); return res; }
+		size_t GetOffset() const { unsigned res; clang_getExpansionLocation(_raw, NULL, NULL, NULL, &res); return res; }
 
 		bool IsInSystemHeader() const { return clang_Location_isInSystemHeader(_raw); }
 		bool IsFromMainFile() const { return clang_Location_isFromMainFile(_raw); }
@@ -99,11 +105,32 @@ namespace clang
 	}
 
 
+	BEGIN_CLANG_WRAPPER(TUResourceUsage, clang_disposeCXTUResourceUsage)
+		uint64_t GetTotal() const
+		{
+			uint64_t result = 0;
+			for (size_t i = 0; i < _raw.numEntries; ++i)
+				result += _raw.entries[i].amount;
+			return result;
+		}
+	END_CLANG_WRAPPER();
+
+
 	BEGIN_CLANG_WRAPPER(TranslationUnit, clang_disposeTranslationUnit)
 		Cursor GetCursor() const { return clang_getTranslationUnitCursor(_raw); }
 		Cursor GetCursor(const SourceLocation& loc) const { return clang_getCursor(_raw, loc.GetRaw()); }
 		SourceLocation GetLocation(const File& file, size_t line, size_t column) const { return clang_getLocation(_raw, file.GetRaw(), line, column); }
 		File GetFile(const std::string& filename) const { return clang_getFile(_raw, filename.c_str()); }
+		TUResourceUsage GetResourceUsage() const { return clang_getCXTUResourceUsage(_raw); }
+
+		void Reparse(std::vector<UnsavedFile> unsavedFiles, unsigned options)
+		{
+			std::vector<CXUnsavedFile> unsaved_files;
+			unsaved_files.reserve(unsavedFiles.size());
+			std::transform(unsavedFiles.begin(), unsavedFiles.end(), std::back_inserter(unsaved_files), std::function<CXUnsavedFile(const UnsavedFile&)>(&UnsavedFile::GetRaw));
+
+			CHECK(clang_reparseTranslationUnit(_raw, unsaved_files.size(), unsaved_files.data(), options) == 0, std::runtime_error("clang_reparseTranslationUnit failed!"));
+		}
 	END_CLANG_WRAPPER();
 
 
