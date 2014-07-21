@@ -11,3 +11,4 @@
 /compile_commands.json
 /rules.ninja
 /tags
+/swig/hide*_wrap.cxx
