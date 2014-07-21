@@ -5,6 +5,7 @@ call g:cpp_plugin.indexer.builder.addCustomRegex('c++', '/[ \t]*BEGIN_CLANG_WRAP
 call g:cpp_plugin.indexer.builder.addCustomRegex('c++', '/[ \t]*BEGIN_CLANG_WRAPPER_NO_DISPOSE[ \t]*\(([A-Za-z0-9_]*)\)/\1Ptr/s/')
 call g:cpp_plugin.indexer.builder.addCustomRegex('c++', '/[ \t]*BEGIN_CLANG_WRAPPER[ \t]*\(([A-Za-z0-9_]*),[ \t]*[^)]*\)/\1/s/')
 call g:cpp_plugin.indexer.builder.addCustomRegex('c++', '/[ \t]*BEGIN_CLANG_WRAPPER[ \t]*\(([A-Za-z0-9_]*),[ \t]*[^)]*\)/\1Ptr/s/')
+call g:cpp_plugin.indexer.builder.addCustomRegex('c++', '/[ \t]*HIDE_DECLARE_PTR[ \t]*\(([A-Za-z0-9_]*)\)/\1Ptr/s/')
 
 if exists('g:c_std_includes') && exists('g:cpp_std_includes') && exists('g:platform_includes')
 	let g:include_priorities = [ g:c_std_includes, g:cpp_std_includes, g:platform_includes, 'clang[^/].*', 'hide/.*' ]
