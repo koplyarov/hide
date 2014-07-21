@@ -13,4 +13,9 @@ template < typename T > T RequireNotNull(const T& val, const char* msg) { HIDE_C
 
 #define REQUIRE_NOT_NULL(Val_) RequireNotNull(Val_, "Null value: " #Val_)
 
+#define HIDE_NONCOPYABLE(Class_) \
+	private: \
+	Class_(const Class_&); \
+	Class_& operator=(const Class_&);
+
 #endif
