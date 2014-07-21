@@ -2,11 +2,13 @@
 #define CLANG_COMPILATIONDATABASE_H
 
 
-#include <Utils.h>
-#include <clang/Common.h>
-#include <clang/String.h>
+#include <hide/Utils.h>
+#include <hide/lang_plugins/cpp/clang/Common.h>
+#include <hide/lang_plugins/cpp/clang/String.h>
 
 
+namespace hide {
+namespace cpp {
 namespace clang
 {
 
@@ -31,7 +33,7 @@ namespace clang
 		{
 			CXCompilationDatabase_Error err = CXCompilationDatabase_NoError;
 			CXCompilationDatabase raw_db = clang_CompilationDatabase_fromDirectory(dir.c_str(), &err);
-			CHECK(err == CXCompilationDatabase_NoError, std::runtime_error("clang_CompilationDatabase_fromDirectory failed!"));
+			HIDE_CHECK(err == CXCompilationDatabase_NoError, std::runtime_error("clang_CompilationDatabase_fromDirectory failed!"));
 			return std::make_shared<CompilationDatabase>(raw_db);
 		}
 
@@ -39,6 +41,6 @@ namespace clang
 		{ return std::make_shared<CompileCommands>(REQUIRE_NOT_NULL(clang_CompilationDatabase_getCompileCommands(_raw, completeFilename.c_str()))); }
 	END_CLANG_WRAPPER();
 
-}
+}}}
 
 #endif

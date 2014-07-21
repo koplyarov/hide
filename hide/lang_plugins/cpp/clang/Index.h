@@ -6,10 +6,12 @@
 #include <functional>
 #include <vector>
 
-#include <clang/Common.h>
-#include <clang/String.h>
+#include <hide/lang_plugins/cpp/clang/Common.h>
+#include <hide/lang_plugins/cpp/clang/String.h>
 
 
+namespace hide {
+namespace cpp {
 namespace clang
 {
 
@@ -21,7 +23,7 @@ namespace clang
 		CXUnsavedFile	_raw;
 
 	public:
-		UnsavedFile() { THROW(std::runtime_error("Not implemented")); }
+		UnsavedFile() { BOOST_THROW_EXCEPTION(std::runtime_error("Not implemented")); }
 
 		CXUnsavedFile GetRaw() const { return _raw; }
 	};
@@ -48,7 +50,7 @@ namespace clang
 	BEGIN_CLANG_WRAPPER_NO_DISPOSE(File)
 		std::string GetFileName() const { return String(clang_getFileName(_raw)); }
 		time_t GetFileTime() const { return clang_getFileTime(_raw); }
-		CXFileUniqueID GetUniqueID() const { CXFileUniqueID res = { }; CHECK(clang_getFileUniqueID(_raw, &res) == 0, "clang_getFileUniqueID failed!"); return res; }
+		CXFileUniqueID GetUniqueID() const { CXFileUniqueID res = { }; HIDE_CHECK(clang_getFileUniqueID(_raw, &res) == 0, std::runtime_error("clang_getFileUniqueID failed!")); return res; }
 	END_CLANG_WRAPPER();
 
 
@@ -129,7 +131,7 @@ namespace clang
 			unsaved_files.reserve(unsavedFiles.size());
 			std::transform(unsavedFiles.begin(), unsavedFiles.end(), std::back_inserter(unsaved_files), std::function<CXUnsavedFile(const UnsavedFile&)>(&UnsavedFile::GetRaw));
 
-			CHECK(clang_reparseTranslationUnit(_raw, unsaved_files.size(), unsaved_files.data(), options) == 0, std::runtime_error("clang_reparseTranslationUnit failed!"));
+			HIDE_CHECK(clang_reparseTranslationUnit(_raw, unsaved_files.size(), unsaved_files.data(), options) == 0, std::runtime_error("clang_reparseTranslationUnit failed!"));
 		}
 	END_CLANG_WRAPPER();
 
@@ -151,6 +153,7 @@ namespace clang
 			return std::make_shared<TranslationUnit>(REQUIRE_NOT_NULL(clang_parseTranslationUnit(_raw, sourceFilename.c_str(), cmd_line_args.data(), cmd_line_args.size(), unsaved_files.data(), unsaved_files.size(), options)));
 		}
 	END_CLANG_WRAPPER();
-}
+
+}}}
 
 #endif

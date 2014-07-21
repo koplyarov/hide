@@ -6,12 +6,14 @@
 #include <clang-c/Index.h>
 
 
+namespace hide {
+namespace cpp {
 namespace clang
 {
 
 #define BEGIN_CLANG_WRAPPER_NO_DISPOSE(Name_) \
 	class Name_; \
-	DECLARE_PTR(Name_); \
+	HIDE_DECLARE_PTR(Name_); \
 	class Name_ \
 	{ \
 		CX##Name_	_raw; \
@@ -27,6 +29,6 @@ namespace clang
 	}
 
 
-}
+}}}
 
 #endif

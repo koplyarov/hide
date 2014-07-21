@@ -7,13 +7,19 @@ call g:cpp_plugin.indexer.builder.addCustomRegex('c++', '/[ \t]*BEGIN_CLANG_WRAP
 call g:cpp_plugin.indexer.builder.addCustomRegex('c++', '/[ \t]*BEGIN_CLANG_WRAPPER[ \t]*\(([A-Za-z0-9_]*),[ \t]*[^)]*\)/\1Ptr/s/')
 
 if exists('g:c_std_includes') && exists('g:cpp_std_includes') && exists('g:platform_includes')
-	let g:include_priorities = [ g:c_std_includes, g:cpp_std_includes, g:platform_includes, '^clang[^/].*', 'clang/', '.*' ]
+	let g:include_priorities = [ g:c_std_includes, g:cpp_std_includes, g:platform_includes, 'clang[^/].*', 'hide/.*' ]
 end
 
 function! GetCppNamespaceFromPath(path)
 	let res = []
 	if len(a:path) > 1 && a:path[0] == 'clang'
 		call add(res, 'clang')
+	endif
+	if len(a:path) > 1 && a:path[0] == 'hide'
+		call add(res, 'hide')
+		if len(a:path) > 3 && a:path[1] == 'lang_plugins'
+			call add(res, a:path[2])
+		endif
 	endif
 	return res
 endf

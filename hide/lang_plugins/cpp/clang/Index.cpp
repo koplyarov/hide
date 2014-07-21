@@ -1,6 +1,8 @@
-#include <clang/Index.h>
+#include <hide/lang_plugins/cpp/clang/Index.h>
 
 
+namespace hide {
+namespace cpp {
 namespace clang
 {
 
@@ -164,4 +166,4 @@ namespace clang
 		}
 	}
 
-}
+}}}

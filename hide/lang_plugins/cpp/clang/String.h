@@ -2,10 +2,12 @@
 #define CLANG_STRING_H
 
 
-#include <Utils.h>
-#include <clang/Common.h>
+#include <hide/Utils.h>
+#include <hide/lang_plugins/cpp/clang/Common.h>
 
 
+namespace hide {
+namespace cpp {
 namespace clang
 {
 
@@ -19,6 +21,6 @@ namespace clang
 		operator std::string() const { return clang_getCString(_raw); }
 	};
 
-}
+}}}
 
 #endif

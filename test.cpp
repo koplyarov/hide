@@ -5,11 +5,11 @@
 #include <boost/filesystem.hpp>
 #include <boost/regex.hpp>
 
-#include <clang/CompilationDatabase.h>
-#include <clang/Index.h>
+#include <hide/lang_plugins/cpp/clang/CompilationDatabase.h>
+#include <hide/lang_plugins/cpp/clang/Index.h>
 
 
-using namespace clang;
+using namespace hide::cpp::clang;
 
 class DumpVisitor : public VisitorBase<DumpVisitor>
 {
@@ -62,12 +62,12 @@ public:
 		size_t line_num = 0;
 		std::string res;
 		do
-		{ CHECK(std::getline(file, res, '\n'), std::runtime_error("Could not read line from a file!")); }
+		{ HIDE_CHECK(std::getline(file, res, '\n'), std::runtime_error("Could not read line from a file!")); }
 		while (line_num++ < lineNum);
 		return res;
 	}
 };
-DECLARE_PTR(FileReader);
+HIDE_DECLARE_PTR(FileReader);
 
 namespace fs = boost::filesystem;
 
