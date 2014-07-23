@@ -12,9 +12,9 @@
 namespace hide
 {
 
-	class Hide
+	class Project
 	{
-		HIDE_NONCOPYABLE(Hide);
+		HIDE_NONCOPYABLE(Project);
 
 		typedef std::map<std::string, BufferPtr>	BuffersMap;
 
@@ -22,8 +22,8 @@ namespace hide
 		BuffersMap		_buffers;
 
 	public:
-		Hide();
-		~Hide();
+		Project();
+		~Project();
 
 		void AddBuffer(const BufferPtr& buffer);
 		void RemoveBuffer(const std::string& bufferName);

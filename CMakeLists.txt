@@ -31,7 +31,7 @@ add_definitions(-std=c++11)
 
 set(hide_SRCS
 	hide/Buffer.cpp
-	hide/Hide.cpp
+	hide/Project.cpp
 	hide/lang_plugins/cpp/LanguagePlugin.cpp
 	hide/lang_plugins/cpp/clang/Index.cpp
 )

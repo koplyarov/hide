@@ -1,20 +1,20 @@
-#include <hide/Hide.h>
+#include <hide/Project.h>
 
 
 namespace hide
 {
 
-	Hide::Hide()
+	Project::Project()
 	{
 	}
 
 
-	Hide::~Hide()
+	Project::~Project()
 	{
 	}
 
 
-    void Hide::AddBuffer(const BufferPtr& buffer)
+    void Project::AddBuffer(const BufferPtr& buffer)
     {
 		std::string name = buffer->GetName();
         HIDE_CHECK(_buffers.find(name) == _buffers.end(), std::runtime_error("Buffer " + name + " already registered!"));
@@ -22,13 +22,13 @@ namespace hide
     }
 
 
-    void Hide::RemoveBuffer(const std::string& bufferName)
+    void Project::RemoveBuffer(const std::string& bufferName)
     {
         _buffers.erase(bufferName);
     }
 
 
-	std::string Hide::GetLanguageName() const
+	std::string Project::GetLanguageName() const
 	{
 		return "test";
 	}

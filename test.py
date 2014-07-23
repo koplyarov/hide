@@ -5,9 +5,9 @@ import sys
 sys.path.insert(0, './bin')
 import hide
 
-h = hide.Hide()
-print h.GetLanguageName()
+p = hide.Project()
+print p.GetLanguageName()
 b = hide.Buffer('asdasda')
 print b.GetName()
-h.RemoveBuffer('')
-h.AddBuffer(hide.Buffer(''))
+p.RemoveBuffer('')
+p.AddBuffer(hide.Buffer(''))

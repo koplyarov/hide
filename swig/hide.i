@@ -1,7 +1,7 @@
 %module hide
 
 %{
-#include <hide/Hide.h>
+#include <hide/Project.h>
 using namespace hide;
 %}
 
@@ -13,4 +13,4 @@ using namespace hide;
 %shared_ptr(hide::Buffer)
 %include <hide/Buffer.h>
 
-%include <hide/Hide.h>
+%include <hide/Project.h>
