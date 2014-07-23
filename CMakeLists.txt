@@ -49,9 +49,9 @@ target_link_libraries(hide
 
 ######################################################################
 
-set(swig_SRCS
-	swig/hide.i
-)
+set(swig_SRCS swig/hide.i)
+
+SET(SWIG_MODULE_hide_EXTRA_DEPS ${hide_SRCS})
 
 set(CMAKE_SWIG_FLAGS "")
 set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR}/bin)
