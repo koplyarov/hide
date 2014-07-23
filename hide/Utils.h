@@ -18,4 +18,15 @@ template < typename T > T RequireNotNull(const T& val, const char* msg) { HIDE_C
 	Class_(const Class_&); \
 	Class_& operator=(const Class_&);
 
+#define HIDE_DECLARE_TO_STRING_METHOD() \
+	std::string ToString() const	{ return boost::lexical_cast<std::string>(*this); } \
+	std::string __repr__() const	{ return ToString(); }
+
+#define HIDE_DECLARE_WRITE_TO_OSTREAM(Type_, Code_) \
+	std::ostream & operator<< (std::ostream & s, const Type_& v) \
+	{ \
+		Code_; \
+		return s; \
+	}
+
 #endif
