@@ -23,23 +23,7 @@ public:
 	CXChildVisitResult Visit(Cursor c, Cursor p) const
 	{
 		if (c.GetLocation().IsFromMainFile() && c.IsDefinition())
-		{
-			std::cout << _indent << "kind: " << CXCursorKindToString(c.GetKind());
-
-			std::string type = c.GetType().GetSpelling();
-			if (!type.empty())
-				std::cout << ", type: " << type;
-
-			std::string spelling = c.GetSpelling();
-			if (!spelling.empty())
-				std::cout << ", spelling: " << spelling;
-
-			std::string displayName = c.GetDisplayName();
-			if (!displayName.empty())
-				std::cout << ", displayName: " << displayName;
-
-			std::cout << std::endl;
-		}
+			std::cout << _indent << c << std::endl;
 
 		c.VisitChildren(DumpVisitor(_indent + "  "));
 

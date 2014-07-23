@@ -109,6 +109,27 @@ namespace clang
 		bool operator != (const Cursor& other) const { return !(*this == other); }
 	END_CLANG_WRAPPER();
 
+	std::ostream& operator <<(std::ostream& s, const Cursor& c)
+	{
+		s << "kind: " << CXCursorKindToString(c.GetKind());
+
+		std::string type = c.GetType().GetSpelling();
+		if (!type.empty())
+			s << ", type: " << type;
+
+		std::string spelling = c.GetSpelling();
+		if (!spelling.empty())
+			s << ", spelling: " << spelling;
+
+		std::string displayName = c.GetDisplayName();
+		if (!displayName.empty())
+			s << ", displayName: " << displayName;
+
+		return s;
+	}
+
+
+
 	template < typename VisitorType_ >
 	CXChildVisitResult VisitorBase<VisitorType_>::VisitorFunc(CXCursor cursor, CXCursor parent, CXClientData clientData)
 	{
