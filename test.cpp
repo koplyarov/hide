@@ -9,7 +9,9 @@
 #include <hide/lang_plugins/cpp/clang/Index.h>
 
 
+using namespace hide;
 using namespace hide::cpp::clang;
+
 
 class DumpVisitor : public VisitorBase<DumpVisitor>
 {
