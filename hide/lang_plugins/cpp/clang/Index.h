@@ -6,6 +6,7 @@
 #include <functional>
 #include <vector>
 
+#include <hide/Location.h>
 #include <hide/lang_plugins/cpp/clang/Common.h>
 #include <hide/lang_plugins/cpp/clang/String.h>
 
@@ -59,6 +60,15 @@ namespace clang
 
 		void GetParams(File& outFile, unsigned& outLine, unsigned& outColumn, unsigned& outOffset)
 		{ CXFile f; clang_getExpansionLocation(_raw, &f, &outLine, &outColumn, &outOffset); outFile = f; }
+
+        operator Location() const
+        {
+            unsigned line = 0, column = 0 , offset = 0;
+            CXFile f;
+            clang_getExpansionLocation(_raw, &f, &line, &column, &offset);
+            File file(f);
+            return Location(file.GetFileName(), line, column);
+        }
 
 		File GetFile() const { CXFile res; clang_getExpansionLocation(_raw, &res, NULL, NULL, NULL); return res; }
 		size_t GetLineNum() const { unsigned res; clang_getExpansionLocation(_raw, NULL, &res, NULL, NULL); return res; }
@@ -122,6 +132,7 @@ namespace clang
 		Cursor GetCursor() const { return clang_getTranslationUnitCursor(_raw); }
 		Cursor GetCursor(const SourceLocation& loc) const { return clang_getCursor(_raw, loc.GetRaw()); }
 		SourceLocation GetLocation(const File& file, size_t line, size_t column) const { return clang_getLocation(_raw, file.GetRaw(), line, column); }
+		SourceLocation GetLocation(const Location& loc) const { return clang_getLocation(_raw, GetFile(loc.GetFilename()).GetRaw(), loc.GetLine(), loc.GetColumn()); }
 		File GetFile(const std::string& filename) const { return clang_getFile(_raw, filename.c_str()); }
 		TUResourceUsage GetResourceUsage() const { return clang_getCXTUResourceUsage(_raw); }
 
