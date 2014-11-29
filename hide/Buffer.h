@@ -3,6 +3,7 @@
 
 
 #include <hide/ILanguagePlugin.h>
+#include <hide/Location.h>
 #include <hide/Utils.h>
 
 
@@ -22,6 +23,10 @@ namespace hide
 		~Buffer();
 
 		std::string GetName() const { return _name; }
+
+		void InsertText(const Location& location, const std::string& text);
+		void ReplaceText(const Location& location, const std::string& newText, size_t oldTextSize);
+		void RemoveText(const Location& location, size_t textSize);
 	};
 	HIDE_DECLARE_PTR(Buffer);
 

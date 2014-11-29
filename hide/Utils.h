@@ -23,7 +23,7 @@ template < typename T > T RequireNotNull(const T& val, const char* msg) { HIDE_C
 	std::string __repr__() const	{ return ToString(); }
 
 #define HIDE_DECLARE_WRITE_TO_OSTREAM(Type_, Code_) \
-	std::ostream & operator<< (std::ostream & s, const Type_& v) \
+	inline std::ostream & operator<< (std::ostream & s, const Type_& v) \
 	{ \
 		Code_; \
 		return s; \

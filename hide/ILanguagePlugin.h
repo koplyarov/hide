@@ -4,6 +4,7 @@
 
 #include <string>
 
+#include <hide/IFile.h>
 #include <hide/Utils.h>
 
 
@@ -15,6 +16,8 @@ namespace hide
 		virtual ~ILanguagePlugin() { }
 
 		virtual std::string GetLanguageName() const = 0;
+
+		virtual IFilePtr ProbeFile(const std::string& filename) const = 0;
 	};
 	HIDE_DECLARE_PTR(ILanguagePlugin);
 

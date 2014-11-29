@@ -18,6 +18,8 @@ namespace cpp
 		LanguagePlugin();
 
 		virtual std::string GetLanguageName() const;
+
+		virtual IFilePtr ProbeFile(const std::string& filename) const;
 	};
 
 }}

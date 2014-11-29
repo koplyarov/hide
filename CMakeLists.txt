@@ -14,8 +14,8 @@ find_package(Boost REQUIRED COMPONENTS
 	exception
 )
 
-find_path(LibClang_INCLUDE_DIRS clang-c/Index.h HINTS /usr/lib/llvm-3.4/include)
-find_library(LibClang_LIBRARIES NAMES clang HINTS /usr/lib/llvm-3.4/lib)
+find_path(LibClang_INCLUDE_DIRS clang-c/Index.h HINTS /usr/lib/llvm-3.4/include /usr/lib/llvm-3.5/include)
+find_library(LibClang_LIBRARIES NAMES clang HINTS /usr/lib/llvm-3.4/lib /usr/lib/llvm-3.5/lib)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
@@ -33,6 +33,7 @@ set(hide_SRCS
 	hide/Buffer.cpp
 	hide/Project.cpp
 	hide/lang_plugins/cpp/LanguagePlugin.cpp
+	hide/lang_plugins/cpp/File.cpp
 	hide/lang_plugins/cpp/clang/Index.cpp
 )
 

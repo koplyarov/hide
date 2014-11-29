@@ -1,10 +1,15 @@
 #include <hide/Project.h>
 
+#include <boost/range/algorithm.hpp>
+
+#include <hide/lang_plugins/cpp/LanguagePlugin.h>
+
 
 namespace hide
 {
 
 	Project::Project()
+		: _langPlugins({ std::make_shared<cpp::LanguagePlugin>() })
 	{
 	}
 
@@ -31,6 +36,53 @@ namespace hide
 	std::string Project::GetLanguageName() const
 	{
 		return "test";
+	}
+
+
+	ProjectPtr Project::CreateAuto(const std::vector<std::string>& skipRegexesList)
+	{
+		using namespace boost;
+
+		std::vector<regex> skip_regexes;
+		skip_regexes.reserve(skipRegexesList.size());
+		transform(skipRegexesList, std::back_inserter(skip_regexes), [](const std::string& s) { return regex(s); });
+
+		ProjectPtr result(new Project);
+		result->ScanProjectFunc(".", skip_regexes);
+		return result;
+	}
+
+
+	void Project::ScanProjectFunc(const boost::filesystem::path& p, const std::vector<boost::regex>& skipList, const std::string& indent)
+	{
+		using namespace boost;
+		using namespace boost::filesystem;
+
+		//std::cerr << indent << p.string() << std::endl;
+
+		if (find_if(skipList, [&p](const regex& re) { smatch m; return regex_match(p.string(), m, re); }) != skipList.end())
+		{
+			//std::cerr << "Skipping" << std::endl;
+			return;
+		}
+
+		for (std::vector<ILanguagePluginPtr>::const_iterator it = _langPlugins.begin(); it != _langPlugins.end(); ++it)
+		{
+			IFilePtr f = (*it)->ProbeFile(p.string());
+
+			if (f)
+			{
+				_files.push_back(f);
+				break;
+			}
+		}
+
+		if (is_directory(p))
+		{
+			directory_iterator end;
+			for (directory_iterator it(p); it != end; ++it)
+				ScanProjectFunc(*it, skipList, indent + "  ");
+		}
 	}
 
 }
