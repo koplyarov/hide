@@ -2,6 +2,7 @@
 *.swp
 .ninja_deps
 .ninja_log
+/.buildSettings
 /.clang_complete
 /CMakeCache.txt
 /CMakeFiles
@@ -10,5 +11,5 @@
 /cmake_install.cmake
 /compile_commands.json
 /rules.ninja
-/tags
 /swig/hide*_wrap.cxx
+/tags
