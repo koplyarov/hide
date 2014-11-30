@@ -2,7 +2,7 @@
 #define CLANG_STRING_H
 
 
-#include <hide/Utils.h>
+#include <hide/utils/Utils.h>
 #include <hide/lang_plugins/cpp/clang/Common.h>
 
 

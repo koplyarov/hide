@@ -7,7 +7,7 @@
 
 #include <boost/lexical_cast.hpp>
 
-#include <hide/Utils.h>
+#include <hide/utils/Utils.h>
 
 
 namespace hide

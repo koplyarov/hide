@@ -27,14 +27,19 @@ include_directories(${CMAKE_SOURCE_DIR})
 
 add_definitions(-std=c++11)
 
+add_definitions(-DHIDE_PLATFORM_POSIX=1) # TODO: implement platform detection
+
 ######################################################################
 
 set(hide_SRCS
 	hide/Buffer.cpp
 	hide/Project.cpp
-	hide/lang_plugins/cpp/LanguagePlugin.cpp
+	hide/buildsystems/cmake/CMakeBuildSystem.cpp
+	hide/buildsystems/cmake/NinjaCMakeBackend.cpp
 	hide/lang_plugins/cpp/File.cpp
+	hide/lang_plugins/cpp/LanguagePlugin.cpp
 	hide/lang_plugins/cpp/clang/Index.cpp
+	hide/utils/Executable.cpp
 )
 
 add_library(hide SHARED ${hide_SRCS})

@@ -5,7 +5,7 @@
 #include <string>
 
 #include <hide/IFile.h>
-#include <hide/Utils.h>
+#include <hide/utils/Utils.h>
 
 
 namespace hide
@@ -20,6 +20,7 @@ namespace hide
 		virtual IFilePtr ProbeFile(const std::string& filename) const = 0;
 	};
 	HIDE_DECLARE_PTR(ILanguagePlugin);
+	HIDE_DECLARE_ARRAY(ILanguagePluginPtr);
 
 }
 

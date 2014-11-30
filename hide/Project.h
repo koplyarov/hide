@@ -9,8 +9,10 @@
 #include <boost/regex.hpp>
 
 #include <hide/Buffer.h>
+#include <hide/IBuildSystem.h>
 #include <hide/ILanguagePlugin.h>
-#include <hide/Utils.h>
+#include <hide/utils/Logger.h>
+#include <hide/utils/Utils.h>
 
 
 namespace hide
@@ -23,14 +25,16 @@ namespace hide
 	{
 		HIDE_NONCOPYABLE(Project);
 
-		typedef std::vector<ILanguagePluginPtr>		LanguagePluginsVector;
 		typedef std::map<std::string, BufferPtr>	BuffersMap;
 
 	public:
 		typedef std::vector<IFilePtr>				FilesVector;
 
 	private:
-		LanguagePluginsVector		_langPlugins;
+		static NamedLogger			s_logger;
+		IBuildSystemProberPtrArray	_buildSystemProbers;
+		ILanguagePluginPtrArray		_langPlugins;
+		IBuildSystemPtr				_currentBuildSystem;
 		FilesVector					_files;
 		BuffersMap					_buffers;
 
@@ -38,14 +42,14 @@ namespace hide
 		Project();
 		~Project();
 
+		IBuildSystemPtr GetBuildSystem();
+
 		void AddBuffer(const BufferPtr& buffer);
 		void RemoveBuffer(const std::string& bufferName);
 
-		std::string GetLanguageName() const;
-
 		FilesVector GetFiles() const { return _files; }
 
-		static ProjectPtr CreateAuto(const std::vector<std::string>& skipRegexesList);
+		static ProjectPtr CreateAuto(const StringArray& skipRegexesList);
 
 	private:
 		void ScanProjectFunc(const boost::filesystem::path& p, const std::vector<boost::regex>& skipList, const std::string& indent = "");

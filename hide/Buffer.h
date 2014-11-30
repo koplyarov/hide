@@ -4,7 +4,7 @@
 
 #include <hide/ILanguagePlugin.h>
 #include <hide/Location.h>
-#include <hide/Utils.h>
+#include <hide/utils/Utils.h>
 
 
 namespace hide

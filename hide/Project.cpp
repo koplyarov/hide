@@ -2,20 +2,40 @@
 
 #include <boost/range/algorithm.hpp>
 
+#include <hide/buildsystems/cmake/CMakeBuildSystem.h>
 #include <hide/lang_plugins/cpp/LanguagePlugin.h>
 
 
 namespace hide
 {
 
+	HIDE_NAMED_LOGGER(Project);
+
 	Project::Project()
-		: _langPlugins({ std::make_shared<cpp::LanguagePlugin>() })
+		:	_buildSystemProbers{ std::make_shared<CMakeBuildSystemProber>() },
+			_langPlugins{ std::make_shared<cpp::LanguagePlugin>() }
 	{
+		s_logger.Debug() << "Created";
 	}
 
 
 	Project::~Project()
 	{
+		s_logger.Debug() << "Destroying";
+	}
+
+
+	IBuildSystemPtr Project::GetBuildSystem()
+	{
+		if (!_currentBuildSystem)
+			for (auto prober : _buildSystemProbers)
+			{
+				_currentBuildSystem = prober->Probe();
+				if (_currentBuildSystem)
+					break;
+			}
+
+		return _currentBuildSystem;
 	}
 
 
@@ -33,13 +53,7 @@ namespace hide
     }
 
 
-	std::string Project::GetLanguageName() const
-	{
-		return "test";
-	}
-
-
-	ProjectPtr Project::CreateAuto(const std::vector<std::string>& skipRegexesList)
+	ProjectPtr Project::CreateAuto(const StringArray& skipRegexesList)
 	{
 		using namespace boost;
 

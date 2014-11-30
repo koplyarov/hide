@@ -2,7 +2,7 @@
 #define HIDE_IFILE_H
 
 
-#include <hide/Utils.h>
+#include <hide/utils/Utils.h>
 
 
 namespace hide
