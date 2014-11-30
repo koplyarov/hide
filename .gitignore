@@ -2,6 +2,7 @@
 *.swp
 .ninja_deps
 .ninja_log
+/*.taghl
 /.buildSettings
 /.clang_complete
 /CMakeCache.txt
