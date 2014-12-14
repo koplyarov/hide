@@ -3,7 +3,7 @@
 #include <boost/filesystem.hpp>
 
 #include <hide/utils/Executable.h>
-#include <hide/utils/Logger.h>
+#include <hide/utils/NamedLogger.h>
 
 
 namespace hide

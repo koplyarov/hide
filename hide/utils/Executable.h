@@ -4,7 +4,7 @@
 
 #include <boost/optional.hpp>
 
-#include <hide/utils/Logger.h>
+#include <hide/utils/NamedLogger.h>
 #include <hide/utils/Utils.h>
 
 

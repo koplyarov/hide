@@ -1,9 +1,22 @@
-%module hide
+%module(directors="1") hide
 
+%include <exception.i>
 %include <std_map.i>
 %include <std_shared_ptr.i>
 %include <std_string.i>
 %include <std_vector.i>
+
+%exception {
+	try { $action }
+	catch (const std::exception& e) { SWIG_exception(SWIG_RuntimeError, e.what()); }
+}
+
+%feature("director:except") {
+	if ($error != NULL) {
+		// TODO: get the exception message
+		throw std::runtime_error(std::string(Swig::DirectorMethodException().getMessage()) );
+	}
+}
 
 %{
 #include <hide/Location.h>
@@ -14,7 +27,18 @@ using namespace hide;
 
 %template(StringVector) std::vector<std::string>;
 
+%ignore operator Enum;
+
 %include <hide/utils/Utils.h>
+
+%implicitconv hide::LogLevel;
+%include <hide/utils/LoggerMessage.h>
+
+%feature("director") hide::ILoggerSink;
+%shared_ptr(hide::ILoggerSink)
+%include <hide/utils/ILoggerSink.h>
+
+%include <hide/utils/Logger.h>
 
 %include <hide/Location.h>
 

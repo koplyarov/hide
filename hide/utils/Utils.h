@@ -29,6 +29,9 @@ namespace hide
 	Class_(const Class_&); \
 	Class_& operator=(const Class_&);
 
+#define HIDE_DECLARE_SWIG_TO_STRING_WRAPPER() \
+	std::string __repr__() const	{ return StringBuilder() % *this; }
+
 #define HIDE_DECLARE_TO_STRING_METHOD() \
 	std::string ToString() const	{ return boost::lexical_cast<std::string>(*this); } \
 	std::string __repr__() const	{ return ToString(); }

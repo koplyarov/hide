@@ -4,7 +4,7 @@
 
 #include <hide/buildsystems/cmake/CMakeBuildConfig.h>
 #include <hide/buildsystems/cmake/NinjaCMakeBackend.h>
-#include <hide/utils/Logger.h>
+#include <hide/utils/NamedLogger.h>
 
 
 namespace hide

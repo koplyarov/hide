@@ -40,6 +40,7 @@ set(hide_SRCS
 	hide/lang_plugins/cpp/LanguagePlugin.cpp
 	hide/lang_plugins/cpp/clang/Index.cpp
 	hide/utils/Executable.cpp
+	hide/utils/Logger.cpp
 )
 
 add_library(hide SHARED ${hide_SRCS})

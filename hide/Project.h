@@ -11,7 +11,7 @@
 #include <hide/Buffer.h>
 #include <hide/IBuildSystem.h>
 #include <hide/ILanguagePlugin.h>
-#include <hide/utils/Logger.h>
+#include <hide/utils/NamedLogger.h>
 #include <hide/utils/Utils.h>
 
 

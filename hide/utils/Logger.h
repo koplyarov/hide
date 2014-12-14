@@ -2,83 +2,24 @@
 #define HIDE_UTILS_LOGGER_H
 
 
-#include <sstream>
-
-#include <hide/utils/StringBuilder.h>
-#include <hide/utils/Utils.h>
+#include <hide/utils/ILoggerSink.h>
+#include <hide/utils/LoggerMessage.h>
 
 
 namespace hide
 {
 
-#define HIDE_NAMED_LOGGER(Class_) NamedLogger Class_::s_logger(#Class_);
-
-	struct LogLevel
+	class Logger
 	{
-		HIDE_ENUM_VALUES(Debug, Info, Warning, Error);
-		HIDE_ENUM_CLASS(LogLevel);
-	};
-
-
-	class NamedLogger
-	{
-	public:
-		class StreamAccessProxy
-		{
-			class Impl
-			{
-				friend class StreamAccessProxy;
-
-			private:
-				const NamedLogger*	_namedLogger;
-				LogLevel			_logLevel;
-				StringBuilder		_stringBuilder;
-
-			public:
-				Impl(const NamedLogger* namedLogger, LogLevel logLevel)
-					: _namedLogger(namedLogger), _logLevel(logLevel)
-				{ }
-
-				~Impl()
-				{
-					std::string loglevel_str;
-					switch (_logLevel.GetRaw())
-					{
-					case LogLevel::Debug:	loglevel_str = "[Debug]  ";	break;
-					case LogLevel::Info:	loglevel_str = "[Info]   ";	break;
-					case LogLevel::Warning:	loglevel_str = "[Warning]";	break;
-					case LogLevel::Error:	loglevel_str = "[Error]  ";	break;
-					}
-					std::cerr << loglevel_str << " [" << _namedLogger->_name << "] " << _stringBuilder.ToString() << std::endl;
-				}
-			};
-			HIDE_DECLARE_PTR(Impl);
-
-		private:
-			ImplPtr		_impl;
-
-		public:
-			StreamAccessProxy(const NamedLogger* namedLogger, LogLevel logLevel)
-				: _impl(new Impl(namedLogger, logLevel))
-			{ }
-
-			template < typename T >
-			StreamAccessProxy& operator << (const T& val)
-			{ _impl->_stringBuilder % val; return *this; }
-		};
+		friend class NamedLogger;
 
 	private:
-		std::string		_name;
+		static LogLevel GetLogLevel();
+		static void Log(const LoggerMessage& msg);
 
 	public:
-		NamedLogger(const std::string& name)
-			: _name(name)
-		{ }
-
-		StreamAccessProxy Debug() const		{ return StreamAccessProxy(this, LogLevel::Debug); }
-		StreamAccessProxy Info() const		{ return StreamAccessProxy(this, LogLevel::Info); }
-		StreamAccessProxy Warning() const	{ return StreamAccessProxy(this, LogLevel::Warning); }
-		StreamAccessProxy Error() const		{ return StreamAccessProxy(this, LogLevel::Error); }
+		static void SetLogLevel(LogLevel logLevel);
+		static void RegisterSink(const ILoggerSinkPtr& sink);
 	};
 
 }
