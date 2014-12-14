@@ -47,6 +47,7 @@ namespace hide
 		void AddBuffer(const BufferPtr& buffer);
 		void RemoveBuffer(const std::string& bufferName);
 
+		IFilePtr GetFileByPath(const std::string& filepath);
 		FilesVector GetFiles() const { return _files; }
 
 		static ProjectPtr CreateAuto(const StringArray& skipRegexesList);

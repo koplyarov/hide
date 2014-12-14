@@ -53,6 +53,17 @@ namespace hide
     }
 
 
+	IFilePtr Project::GetFileByPath(const std::string& filepath)
+	{
+		using namespace boost::filesystem;
+
+		for (auto f : _files)
+			if (equivalent(f->GetFilename(), filepath))
+				return f;
+		return nullptr;
+	}
+
+
 	ProjectPtr Project::CreateAuto(const StringArray& skipRegexesList)
 	{
 		using namespace boost;

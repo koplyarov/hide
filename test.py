@@ -8,4 +8,6 @@ import hide
 p = hide.Project.CreateAuto(['.*\\bCMakeFiles\\b.*', '.*\\.git\\b.*'])
 for f in p.GetFiles():
         print f.GetFilename()
+
 p.GetBuildSystem().BuildAll()
+p.GetBuildSystem().BuildFile(p.GetFileByPath('hide/Buffer.cpp'))
