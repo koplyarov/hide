@@ -4,6 +4,7 @@
 
 #include <sstream>
 
+#include <hide/utils/StringBuilder.h>
 #include <hide/utils/Utils.h>
 
 
@@ -31,7 +32,7 @@ namespace hide
 			private:
 				const NamedLogger*	_namedLogger;
 				LogLevel			_logLevel;
-				std::stringstream	_stream;
+				StringBuilder		_stringBuilder;
 
 			public:
 				Impl(const NamedLogger* namedLogger, LogLevel logLevel)
@@ -48,7 +49,7 @@ namespace hide
 					case LogLevel::Warning:	loglevel_str = "[Warning]";	break;
 					case LogLevel::Error:	loglevel_str = "[Error]  ";	break;
 					}
-					std::cerr << loglevel_str << " [" << _namedLogger->_name << "] " << _stream.str() << std::endl;
+					std::cerr << loglevel_str << " [" << _namedLogger->_name << "] " << _stringBuilder.ToString() << std::endl;
 				}
 			};
 			HIDE_DECLARE_PTR(Impl);
@@ -63,7 +64,7 @@ namespace hide
 
 			template < typename T >
 			StreamAccessProxy& operator << (const T& val)
-			{ _impl->_stream << val; return *this; }
+			{ _impl->_stringBuilder % val; return *this; }
 		};
 
 	private:
