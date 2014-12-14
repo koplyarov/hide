@@ -13,6 +13,8 @@ namespace hide
 		virtual ~IFile() { }
 
 		virtual std::string GetFilename() const = 0;
+
+		virtual std::string ToString() const { return GetFilename(); }
 	};
 	HIDE_DECLARE_PTR(IFile);
 
