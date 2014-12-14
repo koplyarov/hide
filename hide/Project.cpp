@@ -83,13 +83,8 @@ namespace hide
 		using namespace boost;
 		using namespace boost::filesystem;
 
-		//std::cerr << indent << p.string() << std::endl;
-
 		if (find_if(skipList, [&p](const regex& re) { smatch m; return regex_match(p.string(), m, re); }) != skipList.end())
-		{
-			//std::cerr << "Skipping" << std::endl;
 			return;
-		}
 
 		for (std::vector<ILanguagePluginPtr>::const_iterator it = _langPlugins.begin(); it != _langPlugins.end(); ++it)
 		{
