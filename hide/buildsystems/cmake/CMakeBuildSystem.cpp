@@ -38,7 +38,7 @@ namespace hide
 
 		virtual void BuildFile(const IFilePtr& file)
 		{
-			s_logger.Debug() << "BuildFile(" << (file ? file->GetFilename() : "null") << ")";
+			s_logger.Debug() << "BuildFile(" << file << ")";
 			GetCurrentBackend()->BuildFile(file);
 		}
 
