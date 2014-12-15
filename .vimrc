@@ -1,4 +1,6 @@
 "call g:cpp_plugin.autocompleteSettings.setAutoInvokationKeys('\<C-N>')
+"
+nmap <F1> yyjp>>^dWis_logger.Info() << "<ESC>A";<ESC>:s/\((\<Bar>, \)\([A-Za-z0-9_:]*\*\?\<Bar>const [A-Za-z0-9:_]*&\) \([A-Za-z0-9_]*\)\ze[,)]/\1" << \3 << "/ge<CR>:noh<CR>
 
 au BufNew *.h,*.hpp,*.c,*.cpp set complete-=i
 
