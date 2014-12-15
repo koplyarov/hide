@@ -23,7 +23,7 @@ namespace hide
 
 		s_logger.Debug() << "Command: " << shell_cmd.str();
 
-		_retCode = system(shell_cmd.str().c_str());
+		_retCode = ::system(shell_cmd.str().c_str());
 #else
 #	error Executable::ExecuteSync is not implemented
 #endif

@@ -21,4 +21,4 @@ p = hide.Project.CreateAuto(['.*\\bCMakeFiles\\b.*', '.*\\.git\\b.*'])
         #print f.GetFilename()
 
 #p.GetBuildSystem().BuildAll()
-p.GetBuildSystem().BuildFile(p.GetFileByPath('hide/Buffer.cpp'))
+p.GetBuildSystem().BuildFile(p.GetFileByPath('hide/lang_plugins/cpp/clang/Index.cpp'))
