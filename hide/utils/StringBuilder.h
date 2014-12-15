@@ -6,6 +6,8 @@
 #include <sstream>
 #include <utility>
 
+#include <boost/filesystem/path.hpp>
+
 #include <hide/utils/ClassContentChecks.h>
 #include <hide/utils/Utils.h>
 
@@ -57,6 +59,13 @@ namespace hide
 		struct Writer<std::string, ObjectType::Collection>
 		{
 			static void Write(std::stringstream& s, const std::string& val)
+			{ s << val; }
+		};
+
+		template < >
+		struct Writer<boost::filesystem::path, ObjectType::Collection>
+		{
+			static void Write(std::stringstream& s, const boost::filesystem::path& val)
 			{ s << val; }
 		};
 
