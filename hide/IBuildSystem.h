@@ -20,13 +20,13 @@ namespace hide
 	{
 		virtual ~IBuildSystem() { }
 
-		virtual StringArray GetTargets() const = 0;
+		virtual StringArray GetTargets() = 0;
 
 		virtual void BuildFile(const IFilePtr& file) = 0;
 		virtual void BuildAll() = 0;
 		virtual void BuildTarget(const std::string& target) = 0;
 
-		virtual StringToIBuildConfigPtrMap GetAvailableBuildConfigs() const = 0;
+		virtual StringToIBuildConfigPtrMap GetAvailableBuildConfigs() = 0;
 		virtual void SetAvailableBuildConfigs(const StringToIBuildConfigPtrMap& configs) = 0;
 	};
 	HIDE_DECLARE_PTR(IBuildSystem);

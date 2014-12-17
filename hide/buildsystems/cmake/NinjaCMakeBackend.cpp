@@ -27,9 +27,9 @@ namespace hide
 		virtual std::string GetName() const
 		{ return "Ninja"; }
 
-		virtual StringArray GetTargets() const
+		virtual StringArray GetTargets()
 		{
-			return { };
+			return { "LOL", "WUT" };
 		}
 
 		boost::filesystem::path GetCMakeSubdirectory(const boost::filesystem::path& filepath) const
@@ -67,6 +67,8 @@ namespace hide
 		virtual void BuildFile(const IFilePtr& file)
 		{
 			using namespace boost::filesystem;
+
+			// TODO: use ninja -t query ??
 
 			path dir = RelativePath(GetCMakeSubdirectory(file->GetFilename()), ".");
 			std::string project_name = GetProjectName(dir);

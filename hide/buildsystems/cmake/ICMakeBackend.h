@@ -16,7 +16,7 @@ namespace hide
 
 		virtual std::string GetName() const = 0;
 
-		virtual StringArray GetTargets() const = 0;
+		virtual StringArray GetTargets() = 0;
 		virtual void BuildFile(const IFilePtr& file) = 0;
 		virtual void BuildTarget(const std::string& target) = 0;
 	};

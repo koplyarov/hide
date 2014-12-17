@@ -31,9 +31,10 @@ namespace hide
 			s_logger.Debug() << "Destroying";
 		}
 
-		virtual StringArray GetTargets() const
+		virtual StringArray GetTargets()
 		{
-			return { };
+			s_logger.Debug() << "GetTargets()";
+			return GetCurrentBackend()->GetTargets();
 		}
 
 		virtual void BuildFile(const IFilePtr& file)
@@ -53,7 +54,7 @@ namespace hide
 			GetCurrentBackend()->BuildTarget(target);
 		}
 
-		virtual StringToIBuildConfigPtrMap GetAvailableBuildConfigs() const
+		virtual StringToIBuildConfigPtrMap GetAvailableBuildConfigs()
 		{
 			 return _buildConfigs;
 		}
