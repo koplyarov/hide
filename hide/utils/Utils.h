@@ -8,6 +8,7 @@
 #include <vector>
 
 #include <boost/exception/all.hpp>
+#include <stdint.h>
 
 namespace hide
 {
@@ -19,6 +20,9 @@ namespace hide
 
 	typedef std::string String;
 	HIDE_DECLARE_ARRAY(String);
+
+	typedef char Byte;
+	HIDE_DECLARE_ARRAY(Byte);
 
 	template < typename T > T RequireNotNull(const T& val, const char* msg) { HIDE_CHECK(val, std::runtime_error(msg)); return val; }
 
