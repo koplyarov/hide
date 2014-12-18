@@ -1,6 +1,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <stdint.h>
+
 #include <map>
 #include <memory>
 #include <stdexcept>
@@ -8,7 +10,7 @@
 #include <vector>
 
 #include <boost/exception/all.hpp>
-#include <stdint.h>
+#include <boost/preprocessor.hpp>
 
 namespace hide
 {
@@ -17,6 +19,7 @@ namespace hide
 #define HIDE_DECLARE_ARRAY(T_) typedef std::vector<T_>	T_##Array
 #define HIDE_DECLARE_MAP(K_, V_) typedef std::map<K_, V_>	K_##To##V_##Map
 #define HIDE_CHECK(Expr_, Exception_) do { if (!(Expr_)) BOOST_THROW_EXCEPTION(Exception_); } while (false)
+#define HIDE_LOCK(Mutex_)	std::lock_guard<decltype(Mutex_)> BOOST_PP_CAT(Mutex_##Lock, __LINE__)(Mutex_);
 
 	typedef std::string String;
 	HIDE_DECLARE_ARRAY(String);
