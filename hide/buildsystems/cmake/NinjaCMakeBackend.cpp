@@ -5,6 +5,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/regex.hpp>
 
+#include <hide/buildsystems/DefaultBuildProcess.h>
 #include <hide/utils/Executable.h>
 #include <hide/utils/FileSystemUtils.h>
 #include <hide/utils/NamedLogger.h>
@@ -50,7 +51,7 @@ namespace hide
 
 			path cmake_lists = subdirectory / "CMakeLists.txt";
 
-			regex re("^\\s*project\\(\\s*([^)]+)\\s*\\)\\s*$");
+			regex re(R"(^\s*project\(\s*([^)]+)\s*\)\s*$)");
 
 			std::ifstream f(cmake_lists.string());
 			std::string line;
@@ -64,7 +65,7 @@ namespace hide
 			BOOST_THROW_EXCEPTION(std::runtime_error(StringBuilder() % "Cannot find project name in " % cmake_lists));
 		}
 
-		virtual void BuildFile(const IFilePtr& file)
+		virtual IBuildProcessPtr BuildFile(const IFilePtr& file)
 		{
 			using namespace boost::filesystem;
 
@@ -82,25 +83,17 @@ namespace hide
 				params.push_back("-C" + _config->GetBuildDir());
 			params.push_back(StringBuilder() % (dir / "CMakeFiles" / (project_name + ".dir") / (filename + ".o")).string());
 
-			ExecutablePtr ninja = Executable::ExecuteSync("ninja", params);
-			if (ninja->Succeeded())
-				s_logger.Debug() << "Build succeeded";
-			else
-				s_logger.Debug() << "Build failed";
+			return std::make_shared<DefaultBuildProcess>("ninja", params);
 		}
 
-		virtual void BuildTarget(const std::string& target)
+		virtual IBuildProcessPtr BuildTarget(const std::string& target)
 		{
 			StringArray params;
 			params.push_back("-j" + std::to_string(_config->GetNumThreads()));
 			if (!_config->GetBuildDir().empty())
 				params.push_back("-C" + _config->GetBuildDir());
 
-			ExecutablePtr ninja = Executable::ExecuteSync("ninja", params);
-			if (ninja->Succeeded())
-				s_logger.Debug() << "Build succeeded";
-			else
-				s_logger.Debug() << "Build failed";
+			return std::make_shared<DefaultBuildProcess>("ninja", params);
 		}
 	};
 

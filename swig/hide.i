@@ -42,6 +42,13 @@ using namespace hide;
 
 %include <hide/Location.h>
 
+%feature("director") hide::IBuildLogListener;
+%shared_ptr(hide::BuildIssue)
+%shared_ptr(hide::IBuildLogListener)
+%shared_ptr(hide::BuildLog)
+%shared_ptr(hide::BuildLogControl)
+%include <hide/BuildLog.h>
+
 %shared_ptr(hide::IFile)
 %include <hide/IFile.h>
 
@@ -49,6 +56,7 @@ using namespace hide;
 
 %shared_ptr(hide::IBuildSystem)
 %shared_ptr(hide::IBuildConfig)
+%shared_ptr(hide::IBuildProcess)
 %include <hide/IBuildSystem.h>
 
 %template(StringToBuildConfigMap) std::map<std::string, std::shared_ptr<hide::IBuildConfig> >;

@@ -17,8 +17,8 @@ namespace hide
 		virtual std::string GetName() const = 0;
 
 		virtual StringArray GetTargets() = 0;
-		virtual void BuildFile(const IFilePtr& file) = 0;
-		virtual void BuildTarget(const std::string& target) = 0;
+		virtual IBuildProcessPtr BuildFile(const IFilePtr& file) = 0;
+		virtual IBuildProcessPtr BuildTarget(const std::string& target) = 0;
 	};
 	HIDE_DECLARE_PTR(ICMakeBackend);
 

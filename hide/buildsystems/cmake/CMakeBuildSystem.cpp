@@ -37,21 +37,21 @@ namespace hide
 			return GetCurrentBackend()->GetTargets();
 		}
 
-		virtual void BuildFile(const IFilePtr& file)
+		virtual IBuildProcessPtr BuildFile(const IFilePtr& file)
 		{
 			s_logger.Debug() << "BuildFile(" << file << ")";
-			GetCurrentBackend()->BuildFile(file);
+			return GetCurrentBackend()->BuildFile(file);
 		}
 
-		virtual void BuildAll()
+		virtual IBuildProcessPtr BuildAll()
 		{
-			BuildTarget("");
+			return BuildTarget("");
 		}
 
-		virtual void BuildTarget(const std::string& target)
+		virtual IBuildProcessPtr BuildTarget(const std::string& target)
 		{
 			s_logger.Debug() << "BuildTarget(" << target << ")";
-			GetCurrentBackend()->BuildTarget(target);
+			return GetCurrentBackend()->BuildTarget(target);
 		}
 
 		virtual StringToIBuildConfigPtrMap GetAvailableBuildConfigs()

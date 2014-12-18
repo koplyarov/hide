@@ -33,7 +33,9 @@ add_definitions(-DHIDE_PLATFORM_POSIX=1) # TODO: implement platform detection
 
 set(hide_SRCS
 	hide/Buffer.cpp
+	hide/BuildLog.cpp
 	hide/Project.cpp
+	hide/buildsystems/DefaultBuildProcess.cpp
 	hide/buildsystems/cmake/CMakeBuildSystem.cpp
 	hide/buildsystems/cmake/NinjaCMakeBackend.cpp
 	hide/lang_plugins/cpp/File.cpp
