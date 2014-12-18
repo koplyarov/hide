@@ -61,6 +61,20 @@ namespace hide
 		operator Enum () const { return GetRaw(); } \
 		Enum GetRaw() const { return _val; }
 
+
+	class PureVirtualCallException : public std::runtime_error
+	{
+	public:
+		PureVirtualCallException(const std::string& func)
+			: std::runtime_error("Pure virtual call: " + func)
+		{ }
+
+		virtual ~PureVirtualCallException() throw()
+		{ }
+	};
+
+#define HIDE_PURE_VIRTUAL_CALL() BOOST_THROW_EXCEPTION(PureVirtualCallException(__func__));
+
 }
 
 #endif
