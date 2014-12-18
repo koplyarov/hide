@@ -22,13 +22,13 @@ namespace hide
 	public:
 		virtual void AddListener(const IReadBufferListenerPtr& listener)
 		{
-			std::lock_guard<std::recursive_mutex> l(_mutex);
+			HIDE_LOCK(_mutex);
 			_listeners.insert(listener);
 		}
 
 		virtual void RemoveListener(const IReadBufferListenerPtr& listener)
 		{
-			std::lock_guard<std::recursive_mutex> l(_mutex);
+			HIDE_LOCK(_mutex);
 			_listeners.erase(listener);
 		}
 	};
