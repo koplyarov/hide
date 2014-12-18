@@ -19,7 +19,8 @@ namespace hide
 
 	public:
 		static void SetLogLevel(LogLevel logLevel);
-		static void RegisterSink(const ILoggerSinkPtr& sink);
+		static void AddSink(const ILoggerSinkPtr& sink);
+		static void RemoveSink(const ILoggerSinkPtr& sink);
 	};
 
 }
