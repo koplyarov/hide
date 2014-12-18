@@ -15,7 +15,7 @@ class BuildLogListener(hide.IBuildLogListener):
     def __init__(self):
         super(BuildLogListener, self).__init__()
     def OnLine(self, line):
-    print "BUILD: " + line.GetText()
+        print "BUILD: " + line.GetText()
     def OnFinished(self, succeeded):
         print "BUILD " + ("SUCCEEDED" if succeeded else "FAILED")
 
