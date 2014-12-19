@@ -12,7 +12,7 @@ namespace hide
 	{
 		virtual ~IFile() { }
 
-		virtual std::string GetFilename() const = 0;
+		virtual std::string GetFilename() const { HIDE_PURE_VIRTUAL_CALL(); }
 
 		virtual std::string ToString() const { return GetFilename(); }
 	};
