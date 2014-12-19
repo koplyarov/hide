@@ -2,7 +2,7 @@
 #define HIDE_IBUILDSYSTEM_H
 
 
-#include <hide/BuildLog.h>
+#include <hide/BuildLogLine.h>
 #include <hide/IFile.h>
 #include <hide/utils/Utils.h>
 
@@ -17,11 +17,22 @@ namespace hide
 	HIDE_DECLARE_MAP(String, IBuildConfigPtr);
 
 
+	struct IBuildProcessListener
+	{
+		virtual ~IBuildProcessListener() { }
+
+		virtual void OnLine(const BuildLogLine& line) { }
+		virtual void OnFinished(bool succeeded) { }
+	};
+	HIDE_DECLARE_PTR(IBuildProcessListener);
+
+
 	struct IBuildProcess
 	{
 		virtual ~IBuildProcess() { }
 
-		virtual BuildLogPtr GetLog() { HIDE_PURE_VIRTUAL_CALL(); }
+		virtual void AddListener(const IBuildProcessListenerPtr& listener) { HIDE_PURE_VIRTUAL_CALL(); }
+		virtual void RemoveListener(const IBuildProcessListenerPtr& listener) { HIDE_PURE_VIRTUAL_CALL(); }
 	};
 	HIDE_DECLARE_PTR(IBuildProcess);
 
@@ -30,14 +41,14 @@ namespace hide
 	{
 		virtual ~IBuildSystem() { }
 
-		virtual StringArray GetTargets() = 0;
+		virtual StringArray GetTargets() { HIDE_PURE_VIRTUAL_CALL(); }
 
-		virtual IBuildProcessPtr BuildFile(const IFilePtr& file) = 0;
-		virtual IBuildProcessPtr BuildAll() = 0;
-		virtual IBuildProcessPtr BuildTarget(const std::string& target) = 0;
+		virtual IBuildProcessPtr BuildFile(const IFilePtr& file) { HIDE_PURE_VIRTUAL_CALL(); }
+		virtual IBuildProcessPtr BuildAll() { HIDE_PURE_VIRTUAL_CALL(); }
+		virtual IBuildProcessPtr BuildTarget(const std::string& target) { HIDE_PURE_VIRTUAL_CALL(); }
 
-		virtual StringToIBuildConfigPtrMap GetAvailableBuildConfigs() = 0;
-		virtual void SetAvailableBuildConfigs(const StringToIBuildConfigPtrMap& configs) = 0;
+		virtual StringToIBuildConfigPtrMap GetAvailableBuildConfigs() { HIDE_PURE_VIRTUAL_CALL(); }
+		virtual void SetAvailableBuildConfigs(const StringToIBuildConfigPtrMap& configs) { HIDE_PURE_VIRTUAL_CALL(); }
 	};
 	HIDE_DECLARE_PTR(IBuildSystem);
 
@@ -46,7 +57,7 @@ namespace hide
 	{
 		virtual ~IBuildSystemProber() { }
 
-		virtual IBuildSystemPtr Probe() const = 0;
+		virtual IBuildSystemPtr Probe() const { HIDE_PURE_VIRTUAL_CALL(); }
 	};
 	HIDE_DECLARE_PTR(IBuildSystemProber);
 	HIDE_DECLARE_ARRAY(IBuildSystemProberPtr);

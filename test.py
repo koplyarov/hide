@@ -11,9 +11,9 @@ class LoggerSink(hide.ILoggerSink):
     def PrintMessage(self, msg):
         print msg
 
-class BuildLogListener(hide.IBuildLogListener):
+class BuildProcessListener(hide.IBuildProcessListener):
     def __init__(self):
-        super(BuildLogListener, self).__init__()
+        super(BuildProcessListener, self).__init__()
     def OnLine(self, line):
         print "BUILD: " + line.GetText()
     def OnFinished(self, succeeded):
@@ -28,10 +28,10 @@ p = hide.Project.CreateAuto(['.*\\bCMakeFiles\\b.*', '.*\\.git\\b.*'])
 #for f in p.GetFiles():
         #print f.GetFilename()
 
-build_log_listener = BuildLogListener()
-build_log_listener.__disown__()
+build_process_listener = BuildProcessListener()
+build_process_listener.__disown__()
 build_process = p.GetBuildSystem().BuildAll()
-build_process.GetLog().AddListener(build_log_listener)
+build_process.AddListener(build_process_listener)
 del build_process
 
 #print p.GetBuildSystem().GetTargets()

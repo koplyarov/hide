@@ -8,13 +8,13 @@ namespace hide
 	{
 	private:
 		static NamedLogger		s_logger;
-		BuildLogControlPtr		_buildLogControl;
+		DefaultBuildProcess*	_inst;
 		int64_t					_ofs;
 		std::string				_accumStr;
 
 	public:
-		StdoutListener(const BuildLogControlPtr& buildLogControl)
-			: _buildLogControl(buildLogControl), _ofs(0)
+		StdoutListener(DefaultBuildProcess* inst)
+			: _inst(inst), _ofs(0)
 		{ }
 
 		virtual void OnBufferChanged(const IReadBuffer& buf)
@@ -37,7 +37,7 @@ namespace hide
 		void ReportLine(const std::string& str)
 		{
 			// TODO: parse errors/warnings
-			_buildLogControl->ReportLine(BuildLogLine(str, nullptr));
+			_inst->ReportLine(BuildLogLine(str, nullptr));
 		}
 	};
 	HIDE_NAMED_LOGGER(DefaultBuildProcess::StdoutListener);
@@ -46,9 +46,10 @@ namespace hide
 	HIDE_NAMED_LOGGER(DefaultBuildProcess);
 
 	DefaultBuildProcess::DefaultBuildProcess(const std::string& executable, const StringArray& parameters)
-		: _executable(executable, parameters), _buildLogControl(std::make_shared<BuildLogControl>())
 	{
-		_executable.GetStdout()->AddListener(std::make_shared<StdoutListener>(_buildLogControl));
+		_stdoutListener = std::make_shared<StdoutListener>(this);
+		_executable = std::make_shared<Executable>(executable, parameters);
+		_executable->GetStdout()->AddListener(_stdoutListener);
 		s_logger.Debug() << "Created";
 	}
 
@@ -56,12 +57,13 @@ namespace hide
 	DefaultBuildProcess::~DefaultBuildProcess()
 	{
 		s_logger.Debug() << "Destroying";
+		_executable.reset();
 	}
 
 
 	void DefaultBuildProcess::OnFinished()
 	{
-		_buildLogControl->ReportFinished(_executable.Succeeded());
+		ReportFinished(_executable->Succeeded());
 	}
 
 }

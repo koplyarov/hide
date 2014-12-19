@@ -3,6 +3,7 @@
 
 
 #include <hide/IBuildSystem.h>
+#include <hide/buildsystems/BuildProcessBase.h>
 #include <hide/utils/Executable.h>
 #include <hide/utils/NamedLogger.h>
 
@@ -10,20 +11,18 @@
 namespace hide
 {
 
-	class DefaultBuildProcess : public IBuildProcess
+	class DefaultBuildProcess : public BuildProcessBase
 	{
 		class StdoutListener;
 
 	private:
 		static NamedLogger		s_logger;
-		BuildLogControlPtr		_buildLogControl;
-		Executable				_executable;
+		ExecutablePtr			_executable;
+		IReadBufferListenerPtr	_stdoutListener;
 
 	public:
 		DefaultBuildProcess(const std::string& executable, const StringArray& parameters);
 		~DefaultBuildProcess();
-
-		virtual BuildLogPtr GetLog() { return _buildLogControl; }
 
 	private:
 		void OnFinished();

@@ -42,18 +42,16 @@ using namespace hide;
 
 %include <hide/Location.h>
 
-%feature("director") hide::IBuildLogListener;
 %shared_ptr(hide::BuildIssue)
-%shared_ptr(hide::IBuildLogListener)
-%shared_ptr(hide::BuildLog)
-%shared_ptr(hide::BuildLogControl)
-%include <hide/BuildLog.h>
+%include <hide/BuildLogLine.h>
 
 %shared_ptr(hide::IFile)
 %include <hide/IFile.h>
 
 %template(FileVector) std::vector<std::shared_ptr<hide::IFile> >;
 
+%feature("director") hide::IBuildProcessListener;
+%shared_ptr(hide::IBuildProcessListener)
 %shared_ptr(hide::IBuildSystem)
 %shared_ptr(hide::IBuildConfig)
 %shared_ptr(hide::IBuildProcess)

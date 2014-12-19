@@ -1,10 +1,10 @@
-#include <hide/BuildLog.h>
+#include <hide/buildsystems/BuildProcessBase.h>
 
 
 namespace hide
 {
 
-	void BuildLog::AddListener(const IBuildLogListenerPtr& listener)
+	void BuildProcessBase::AddListener(const IBuildProcessListenerPtr& listener)
 	{
 		HIDE_LOCK(_mutex);
 		_listeners.insert(listener);
@@ -16,14 +16,14 @@ namespace hide
 	}
 
 
-	void BuildLog::RemoveListener(const IBuildLogListenerPtr& listener)
+	void BuildProcessBase::RemoveListener(const IBuildProcessListenerPtr& listener)
 	{
 		HIDE_LOCK(_mutex);
 		_listeners.erase(listener);
 	}
 
 
-	void BuildLogControl::ReportLine(const BuildLogLine& line)
+	void BuildProcessBase::ReportLine(const BuildLogLine& line)
 	{
 		HIDE_LOCK(_mutex);
 		_lines.push_back(line);
@@ -32,7 +32,7 @@ namespace hide
 	}
 
 
-	void BuildLogControl::ReportFinished(bool succeeded)
+	void BuildProcessBase::ReportFinished(bool succeeded)
 	{
 		HIDE_LOCK(_mutex);
 		_succeeded = succeeded;
