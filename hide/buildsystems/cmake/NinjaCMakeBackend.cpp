@@ -9,6 +9,7 @@
 #include <hide/utils/Executable.h>
 #include <hide/utils/FileSystemUtils.h>
 #include <hide/utils/NamedLogger.h>
+#include <hide/utils/ReadBufferLinesListener.h>
 
 
 namespace hide
@@ -30,7 +31,28 @@ namespace hide
 
 		virtual StringArray GetTargets()
 		{
-			return { "LOL", "WUT" };
+			using namespace boost;
+
+			StringArray params;
+			params.push_back("-ttargets");
+			if (!_config->GetBuildDir().empty())
+				params.push_back("-C" + _config->GetBuildDir());
+
+			StringArray result;
+			regex re("^([^:]+):.*$");
+
+			ExecutablePtr ninja = std::make_shared<Executable>("ninja", params);
+			ninja->GetStdout()->AddListener(std::make_shared<ReadBufferLinesListener>(
+					[&](const std::string& s)
+					{
+						smatch m;
+						if (regex_match(s, m, re))
+							result.push_back(m[1]);
+					}
+				));
+			ninja.reset();
+
+			return result;
 		}
 
 		boost::filesystem::path GetCMakeSubdirectory(const boost::filesystem::path& filepath) const
