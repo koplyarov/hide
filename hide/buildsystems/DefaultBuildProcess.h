@@ -25,6 +25,7 @@ namespace hide
 		~DefaultBuildProcess();
 
 	private:
+		void ParseLine(const std::string& str);
 		void OnFinished();
 	};
 
