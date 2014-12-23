@@ -4,40 +4,28 @@
 namespace hide
 {
 
-	void BuildProcessBase::AddListener(const IBuildProcessListenerPtr& listener)
-	{
-		HIDE_LOCK(_mutex);
-		_listeners.insert(listener);
-
-		for (auto l : _lines)
-			listener->OnLine(l);
-		if (_succeeded)
-			listener->OnFinished(*_succeeded);
-	}
-
-
-	void BuildProcessBase::RemoveListener(const IBuildProcessListenerPtr& listener)
-	{
-		HIDE_LOCK(_mutex);
-		_listeners.erase(listener);
-	}
-
-
 	void BuildProcessBase::ReportLine(const BuildLogLine& line)
 	{
-		HIDE_LOCK(_mutex);
+		HIDE_LOCK(GetMutex());
 		_lines.push_back(line);
-		for (auto l : _listeners)
-			l->OnLine(line);
+		InvokeListeners(std::bind(&IBuildProcessListener::OnLine, std::placeholders::_1, std::cref(line)));
 	}
 
 
 	void BuildProcessBase::ReportFinished(bool succeeded)
 	{
-		HIDE_LOCK(_mutex);
+		HIDE_LOCK(GetMutex());
 		_succeeded = succeeded;
-		for (auto l : _listeners)
-			l->OnFinished(*_succeeded);
+		InvokeListeners(std::bind(&IBuildProcessListener::OnFinished, std::placeholders::_1, *_succeeded));
+	}
+
+
+	void BuildProcessBase::PopulateState(const IBuildProcessListenerPtr& listener) const
+	{
+		for (auto l : _lines)
+			listener->OnLine(l);
+		if (_succeeded)
+			listener->OnFinished(*_succeeded);
 	}
 
 }

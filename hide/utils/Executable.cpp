@@ -9,7 +9,7 @@
 
 #include <boost/scope_exit.hpp>
 
-#include <hide/utils/ReadBufferBase.h>
+#include <hide/utils/ListenersHolder.h>
 
 
 namespace hide
@@ -18,7 +18,7 @@ namespace hide
 	namespace
 	{
 #if HIDE_PLATFORM_POSIX
-		class PipeReadBuffer : public ReadBufferBase
+		class PipeReadBuffer : public ListenersHolder<IReadBufferListener, IReadBuffer>
 		{
 			HIDE_NONCOPYABLE(PipeReadBuffer);
 
@@ -44,7 +44,7 @@ namespace hide
 
 			virtual ByteArray Read(int64_t ofs) const
 			{
-				HIDE_LOCK(_mutex);
+				HIDE_LOCK(GetMutex());
 				if (ofs > _data.size())
 					BOOST_THROW_EXCEPTION(std::runtime_error("Invalid offset!"));
 				ByteArray result;
@@ -53,6 +53,10 @@ namespace hide
 				std::copy(_data.begin() + ofs, _data.begin() + ofs + result_size, result.begin());
 				return result;
 			}
+
+		protected:
+			virtual void PopulateState(const IReadBufferListenerPtr& listener) const
+			{ listener->OnBufferChanged(*this); }
 
 		private:
 			void ThreadFunc()
@@ -71,11 +75,10 @@ namespace hide
 					}
 					else if (ret > 0)
 					{
-						HIDE_LOCK(_mutex);
+						HIDE_LOCK(GetMutex());
 						_data.resize(_data.size() + ret);
 						std::copy(local_buf.begin(), local_buf.begin() + ret, _data.end() - ret);
-						for (auto l : _listeners)
-							l->OnBufferChanged(*this);
+						InvokeListeners(std::bind(&IReadBufferListener::OnBufferChanged, std::placeholders::_1, std::ref(*this)));
 					}
 				} while (ret >= 0);
 			}
