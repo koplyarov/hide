@@ -6,14 +6,15 @@
 #include <mutex>
 #include <set>
 
+#include <boost/mpl/empty_base.hpp>
+
 #include <hide/utils/Utils.h>
 
 
 namespace hide
 {
 
-
-	template < typename ListenerType_, typename Interface_ >
+	template < typename ListenerType_, typename Interface_ = boost::mpl::empty_base >
 	class ListenersHolder : public virtual Interface_
 	{
 		typedef ListenerType_												ListenerType;
