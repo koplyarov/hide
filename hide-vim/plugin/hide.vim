@@ -155,7 +155,7 @@ endf
 function s:BuildAll()
 	python vim.command('let l:res = ' + ('1' if hidePlugin.BuildAll() else '0'))
 	if !res
-		"throw s:BuildSystemException('Another build already in progress!')
+		throw s:BuildSystemException('Another build already in progress!')
 	end
 	let s:buildLog = [ ]
 	call s:SyncEverything()

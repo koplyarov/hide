@@ -20,6 +20,7 @@ class BuildProcessListener(hide.IBuildProcessListener):
         super(BuildProcessListener, self).__init__()
         self.buildLog = buildLog
         self.mutex = mutex
+        self.finished = False
 
     def OnLine(self, line):
         with self.mutex:
@@ -27,6 +28,8 @@ class BuildProcessListener(hide.IBuildProcessListener):
 
     def OnFinished(self, succeeded):
         with self.mutex:
+            self.finished = True
+            self.succeeded = succeeded
             self.buildLog.append("BUILD " + ("SUCCEEDED" if succeeded else "FAILED"))
 
 
@@ -53,9 +56,9 @@ class HidePlugin:
             return self.buildLog[lineOfs : newLen + 1]
 
     def BuildAll(self):
-        #if self.buildProcessListener != None:
-            #return False
         with self.mutex:
+            if self.buildProcessListener != None and not self.buildProcessListener.finished:
+                return False
             self.buildLog = [ ]
         self.buildProcess = self.project.GetBuildSystem().BuildAll()
         self.buildProcessListener = BuildProcessListener(self.buildLog, self.mutex)
