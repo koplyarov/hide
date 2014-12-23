@@ -13,11 +13,12 @@ namespace hide
 
 	class DefaultBuildProcess : public BuildProcessBase
 	{
-		class StdoutListener;
+		class ExecutableListener;
 
 	private:
 		static NamedLogger		s_logger;
 		ExecutablePtr			_executable;
+		IExecutableListenerPtr	_executableListener;
 		IReadBufferListenerPtr	_stdoutListener;
 
 	public:
