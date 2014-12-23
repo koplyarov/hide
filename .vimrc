@@ -4,6 +4,10 @@ nmap <F1> yyjp>>^dWis_logger.Info() << "<ESC>A";<ESC>:s/\((\<Bar>, \)\([A-Za-z0-
 
 au BufNew *.h,*.hpp,*.c,*.cpp set complete-=i
 
+if exists('g:load_hide_plugin') && g:load_hide_plugin == 1
+	set runtimepath+=./hide-vim
+end
+
 let g:cpp_plugin.indexer.builder.autoBuild = 1
 call g:cpp_plugin.indexer.builder.addCustomRegex('c++', '/[ \t]*BEGIN_CLANG_WRAPPER_NO_DISPOSE[ \t]*\(([A-Za-z0-9_]*)\)/\1/s/')
 call g:cpp_plugin.indexer.builder.addCustomRegex('c++', '/[ \t]*BEGIN_CLANG_WRAPPER_NO_DISPOSE[ \t]*\(([A-Za-z0-9_]*)\)/\1Ptr/s/')
