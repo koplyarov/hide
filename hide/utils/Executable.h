@@ -10,6 +10,7 @@
 #endif
 
 #include <hide/utils/IReadBuffer.h>
+#include <hide/utils/ListenersHolder.h>
 #include <hide/utils/NamedLogger.h>
 #include <hide/utils/Utils.h>
 
@@ -17,11 +18,16 @@
 namespace hide
 {
 
-	class Executable;
-	HIDE_DECLARE_PTR(Executable);
+	struct IExecutableListener
+	{
+		virtual ~IExecutableListener() { }
 
-	// TODO: design an asynchronous interface
-	class Executable
+		virtual void OnFinished(int retCode) { }
+	};
+	HIDE_DECLARE_PTR(IExecutableListener);
+
+
+	class Executable : public ListenersHolder<IExecutableListener>
 	{
 	private:
 		static NamedLogger			s_logger;
@@ -42,11 +48,13 @@ namespace hide
 		IReadBufferPtr GetStdout() const { return _stdout; }
 		IReadBufferPtr GetStderr() const { return _stderr; }
 
-		bool Succeeded() const	{ return *_retCode == 0; }
+	protected:
+		virtual void PopulateState(const IExecutableListenerPtr& listener) const;
 
 	private:
 		void ThreadFunc();
 	};
+	HIDE_DECLARE_PTR(Executable);
 
 }
 

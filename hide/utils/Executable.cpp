@@ -7,10 +7,6 @@
 #include <sstream>
 #include <thread>
 
-#include <boost/scope_exit.hpp>
-
-#include <hide/utils/ListenersHolder.h>
-
 
 namespace hide
 {
@@ -176,6 +172,13 @@ namespace hide
 	}
 
 
+	void Executable::PopulateState(const IExecutableListenerPtr& listener) const
+	{
+		if (_retCode)
+			listener->OnFinished(*_retCode);
+	}
+
+
 	void Executable::ThreadFunc()
 	{
 #if HIDE_PLATFORM_POSIX
@@ -195,6 +198,8 @@ namespace hide
 			s_logger.Debug() << "The child (" << wpid << ") failed to exit";
 			_retCode = 255;
 		}
+
+		InvokeListeners(std::bind(&IExecutableListener::OnFinished, std::placeholders::_1, *_retCode));
 #else
 #	error Executable::ThreadFunc is not implemented
 #endif
