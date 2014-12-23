@@ -5,6 +5,8 @@ nmap <F1> yyjp>>^dWis_logger.Info() << "<ESC>A";<ESC>:s/\((\<Bar>, \)\([A-Za-z0-
 au BufNew *.h,*.hpp,*.c,*.cpp set complete-=i
 
 if exists('g:load_hide_plugin') && g:load_hide_plugin == 1
+	let g:timer._handlers = {}
+	set updatetime=100
 	set runtimepath+=./hide-vim
 end
 
