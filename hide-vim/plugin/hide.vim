@@ -27,7 +27,7 @@ function s:UpdateLogWindow(category, list)
 	let prevBuf = bufnr('')
 	try
 		set eventignore=all
-		execute 'buffer '.s:hideBufs[a:category]
+		execute 'buffer '.s:hideBufs[a:category.id]
 		setlocal noro
 
 		let prevLen = len(getline('^', '$'))
@@ -52,7 +52,7 @@ function s:UpdateLogWindow(category, list)
 				try
 					for j in range(0, winnr('$'))
 						exec j.'wincmd w'
-						if bufnr('') == s:hideBufs[a:category]
+						if bufnr('') == s:hideBufs[a:category.id]
 							normal G
 						end
 					endfor
@@ -95,7 +95,7 @@ function s:GetTabVar(tabnr, var)
 endfunction
 
 function s:HideBufInitialized(category)
-	return has_key(s:hideBufs, a:category)
+	return has_key(s:hideBufs, a:category.id)
 endf
 
 function s:InitHideBuf(category, buf)
@@ -103,7 +103,7 @@ function s:InitHideBuf(category, buf)
 		return
 	end
 
-	let s:hideBufs[a:category] = a:buf
+	let s:hideBufs[a:category.id] = a:buf
 
 	let prevBuf = bufnr('')
 	execute 'buffer '.a:buf
@@ -111,18 +111,18 @@ function s:InitHideBuf(category, buf)
 		setlocal ma
 		setlocal noswf
 		setlocal ro
-		setlocal ft=hide-log
+		exec 'setlocal ft='.a:category.filetype
 		setlocal nocul
 	finally
 		execute 'buffer '.prevBuf
 	endtry
 endf
 
-let s:logCategory = 'log'
-let s:buildLogCategory = 'build log'
+let s:logCategory = { 'id': 'log', 'displayName': 'log', 'filetype': 'hide-log', 'dataList': s:log }
+let s:buildLogCategory = { 'id': 'buildLog', 'displayName': 'build log', 'filetype': 'hide-build-log', 'dataList': s:buildLog }
 let s:hideBufs = { }
 function s:OpenHideWindow(category, focus)
-	let buf = bufnr('HIDE '.a:category, 1)
+	let buf = bufnr('HIDE '.a:category.displayName, 1)
 	if !s:HideBufInitialized(a:category)
 		call s:InitHideBuf(a:category, buf)
 	end
@@ -135,12 +135,7 @@ function s:OpenHideWindow(category, focus)
 	end
 
 	execute 'buffer '.buf
-	" TODO: reimplement
-	if a:category == s:logCategory
-		call s:UpdateLogWindow(a:category, s:log)
-	elseif a:category == s:buildLogCategory
-		call s:UpdateLogWindow(a:category, s:buildLog)
-	end
+	call s:UpdateLogWindow(a:category, a:category.dataList)
 endf
 
 function s:TimerTick()
@@ -173,6 +168,8 @@ autocmd CursorHold,CursorHoldI * call <SID>TimerTick()
 python import vim
 python import string
 python hidePlugin = HidePlugin()
+
+au VimLeavePre * python del hidePlugin
 
 call s:SyncEverything()
 
