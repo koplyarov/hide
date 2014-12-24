@@ -12,17 +12,19 @@ namespace hide
 
 	struct BuildIssueType
 	{
-		HIDE_ENUM_VALUES(Warning, Error);
+		HIDE_ENUM_VALUES(Unknown, Note, Warning, Error);
 		HIDE_ENUM_CLASS(BuildIssueType);
 
 		BuildIssueType()
-			: _val(Warning)
+			: _val(Unknown)
 		{ }
 
 		std::string ToString() const
 		{
 			switch (GetRaw())
 			{
+			case BuildIssueType::Unknown:	return "Unknown";
+			case BuildIssueType::Note:		return "Note";
 			case BuildIssueType::Warning:	return "Warning";
 			case BuildIssueType::Error:		return "Error";
 			}
