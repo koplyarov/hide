@@ -55,15 +55,28 @@ class HidePlugin:
             newLen = len(self.buildLog)
             return self.buildLog[lineOfs : newLen + 1]
 
-    def BuildAll(self):
+    def GetBuildTargets(self):
+        return self.project.GetBuildSystem().GetTargets()
+
+    def __DoBuild(self, targetName, buildFunc):
         with self.mutex:
             if self.buildProcessListener != None and not self.buildProcessListener.finished:
                 return False
-            self.buildLog = [ ]
-        self.buildProcess = self.project.GetBuildSystem().BuildAll()
+            self.buildLog = [ 'Building ' + targetName + ':' ]
+        self.buildProcess = None
+        self.buildProcess = buildFunc(self.project.GetBuildSystem())
         self.buildProcessListener = BuildProcessListener(self.buildLog, self.mutex)
         self.buildProcess.AddListener(self.buildProcessListener)
         return True
+
+    def BuildAll(self):
+        return self.__DoBuild('all', lambda bs: bs.BuildAll())
+
+    def BuildTarget(self, target):
+        return self.__DoBuild(target, lambda bs: bs.BuildTarget(target))
+
+    def BuildFile(self, filename):
+        return self.__DoBuild(filename, lambda bs: bs.BuildFile(self.project.GetFileByPath(filename)))
 
     def __del__(self):
         hide.Logger.RemoveSink(self.sink);

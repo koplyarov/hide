@@ -152,14 +152,20 @@ function s:BuildSystemException(msg)
 	return "HIDE.BuildSystemException: ".a:msg
 endf
 
-function s:BuildAll()
-	python vim.command('let l:res = ' + ('1' if hidePlugin.BuildAll() else '0'))
+function s:DoBuild(methodCall)
+	exec 'python vim.command("let l:res = " + ("1" if hidePlugin.'.a:methodCall.' else "0"))'
 	if !res
 		throw s:BuildSystemException('Another build already in progress!')
 	end
 	let s:buildLog = [ ]
 	call s:SyncEverything()
 	call s:OpenHideWindow(s:buildLogCategory, 0)
+endf
+
+function s:GetBuildTargets(A, L, P)
+	python vim.command('let l:res = join(' + str(list(hidePlugin.GetBuildTargets())) + ', "\n")')
+	call s:SyncEverything()
+	return res
 endf
 
 autocmd CursorHold,CursorHoldI * call <SID>TimerTick()
@@ -172,6 +178,9 @@ call s:SyncEverything()
 
 command! -nargs=0 HideLog call <SID>OpenHideWindow(s:logCategory, 0)
 command! -nargs=0 HideBuildLog call <SID>OpenHideWindow(s:buildLogCategory, 0)
-command! -nargs=0 HideBuildAll call <SID>BuildAll()
+command! -nargs=0 HideBuildAll call <SID>DoBuild('BuildAll()')
+command! -nargs=? -complete=custom,<SID>GetBuildTargets HideBuild call <SID>DoBuild('BuildTarget("<args>")')
+command! -nargs=? -complete=file HideBuildFile call <SID>DoBuild('BuildFile("<args>")')
 
-au CursorMoved,CursorMovedI * call <SID>SyncEverything()
+
+au CursorMoved,CursorMovedI,CmdWinEnter,CmdWinLeave * call <SID>SyncEverything()
