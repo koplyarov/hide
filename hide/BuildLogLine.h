@@ -3,6 +3,7 @@
 
 
 #include <hide/Location.h>
+#include <hide/utils/StringBuilder.h>
 #include <hide/utils/Utils.h>
 
 
@@ -13,6 +14,21 @@ namespace hide
 	{
 		HIDE_ENUM_VALUES(Warning, Error);
 		HIDE_ENUM_CLASS(BuildIssueType);
+
+		BuildIssueType()
+			: _val(Warning)
+		{ }
+
+		std::string ToString() const
+		{
+			switch (GetRaw())
+			{
+			case BuildIssueType::Warning:	return "Warning";
+			case BuildIssueType::Error:		return "Error";
+			}
+		}
+
+		HIDE_DECLARE_SWIG_TO_STRING_WRAPPER();
 	};
 
 
