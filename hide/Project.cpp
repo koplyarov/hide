@@ -15,13 +15,13 @@ namespace hide
 		:	_buildSystemProbers{ std::make_shared<CMakeBuildSystemProber>() },
 			_langPlugins{ std::make_shared<cpp::LanguagePlugin>() }
 	{
-		s_logger.Debug() << "Created";
+		s_logger.Info() << "Created";
 	}
 
 
 	Project::~Project()
 	{
-		s_logger.Debug() << "Destroying";
+		s_logger.Info() << "Destroying";
 	}
 
 

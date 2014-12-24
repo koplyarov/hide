@@ -21,6 +21,7 @@ namespace hide
 
 		virtual void OnFinished(int retCode)
 		{
+			s_logger.Info() << "Build " << (retCode == 0 ? "succeeded" : "failed");
 			_inst->ReportFinished(retCode == 0);
 		}
 	};
@@ -32,13 +33,13 @@ namespace hide
 		_executable->GetStdout()->AddListener(std::make_shared<ReadBufferLinesListener>(std::bind(&DefaultBuildProcess::ParseLine, this, std::placeholders::_1)));
 		_executable->AddListener(std::make_shared<ExecutableListener>(this));
 		// TODO: fix inconsistent order of reporting lines and finished flag
-		s_logger.Debug() << "Created";
+		s_logger.Info() << "Created";
 	}
 
 
 	DefaultBuildProcess::~DefaultBuildProcess()
 	{
-		s_logger.Debug() << "Destroying";
+		s_logger.Info() << "Destroying";
 		_executable.reset();
 	}
 

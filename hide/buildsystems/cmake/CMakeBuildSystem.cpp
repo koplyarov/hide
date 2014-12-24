@@ -23,23 +23,25 @@ namespace hide
 			:	_backendProbers{ std::make_shared<NinjaCMakeBackendProber>() },
 				_buildConfigs{ {"default", std::make_shared<CMakeBuildConfig>(1, "")} }
 		{
-			s_logger.Debug() << "Created";
+			s_logger.Info() << "Created";
 		}
 
 		~CMakeBuildSystem()
 		{
-			s_logger.Debug() << "Destroying";
+			s_logger.Info() << "Destroying";
 		}
 
 		virtual StringArray GetTargets()
 		{
-			s_logger.Debug() << "GetTargets()";
-			return GetCurrentBackend()->GetTargets();
+			s_logger.Info() << "GetTargets()";
+			StringArray result = GetCurrentBackend()->GetTargets();
+			s_logger.Info() << "Targets: " << result;
+			return result;
 		}
 
 		virtual IBuildProcessPtr BuildFile(const IFilePtr& file)
 		{
-			s_logger.Debug() << "BuildFile(" << file << ")";
+			s_logger.Info() << "BuildFile(" << file << ")";
 			return GetCurrentBackend()->BuildFile(file);
 		}
 
@@ -50,7 +52,7 @@ namespace hide
 
 		virtual IBuildProcessPtr BuildTarget(const std::string& target)
 		{
-			s_logger.Debug() << "BuildTarget(" << target << ")";
+			s_logger.Info() << "BuildTarget(" << target << ")";
 			return GetCurrentBackend()->BuildTarget(target);
 		}
 
