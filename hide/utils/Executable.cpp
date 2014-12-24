@@ -76,7 +76,7 @@ namespace hide
 						std::copy(local_buf.begin(), local_buf.begin() + ret, _data.end() - ret);
 						InvokeListeners(std::bind(&IReadBufferListener::OnBufferChanged, std::placeholders::_1, std::ref(*this)));
 					}
-				} while (ret >= 0);
+				} while (ret > 0);
 			}
 		};
 		HIDE_DECLARE_PTR(PipeReadBuffer);
