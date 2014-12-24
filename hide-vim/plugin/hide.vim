@@ -154,6 +154,12 @@ function s:TimerTick()
 	call feedkeys("f\e")
 endf
 
+function s:TimerTickI()
+	call s:SyncEverything()
+	let noop_keys = (col('$') > 1) ? (col('.') == 1 ? "\<Right>\<Left>" : "\<Left>\<Right>") : "\ei"
+	call feedkeys(noop_keys, 'n')
+endf
+
 function s:BuildSystemException(msg)
 	return "HIDE.BuildSystemException: ".a:msg
 endf
@@ -174,7 +180,8 @@ function s:GetBuildTargets(A, L, P)
 	return res
 endf
 
-autocmd CursorHold,CursorHoldI * call <SID>TimerTick()
+autocmd CursorHold * call <SID>TimerTick()
+autocmd CursorHoldI * call <SID>TimerTickI()
 
 python import vim
 python import string
