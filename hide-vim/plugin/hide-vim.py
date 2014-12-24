@@ -24,7 +24,11 @@ class BuildProcessListener(hide.IBuildProcessListener):
 
     def OnLine(self, line):
         with self.mutex:
-            self.buildLog.append(line.GetText())
+            if line.GetIssue() is None:
+                self.buildLog.append(line.GetText())
+            else:
+                issue = line.GetIssue()
+                self.buildLog.append(str(issue.GetType()).upper() + ": " + issue.GetText())
 
     def OnFinished(self, succeeded):
         with self.mutex:

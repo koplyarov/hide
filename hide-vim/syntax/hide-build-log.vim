@@ -3,8 +3,8 @@ if exists("b:current_syntax")
 endif
 
 syntax match buildStarted /^Building ".*":$/
-syntax match buildWarning /^WARNING: /
-syntax match buildError /\^ERROR: /
+syntax match buildWarning /^WARNING:\ze /
+syntax match buildError /^ERROR:\ze /
 syntax match buildSucceeded /^BUILD SUCCEEDED$/
 syntax match buildFailed /^BUILD FAILED$/
 
