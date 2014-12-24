@@ -62,7 +62,7 @@ class HidePlugin:
         with self.mutex:
             if self.buildProcessListener != None and not self.buildProcessListener.finished:
                 return False
-            self.buildLog = [ 'Building ' + targetName + ':' ]
+            self.buildLog = [ 'Building "' + targetName + '":' ]
         self.buildProcess = None
         self.buildProcess = buildFunc(self.project.GetBuildSystem())
         self.buildProcessListener = BuildProcessListener(self.buildLog, self.mutex)
