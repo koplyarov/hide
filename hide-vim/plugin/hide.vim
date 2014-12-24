@@ -18,31 +18,36 @@ function s:SyncEverything()
 	end
 endf
 
+function s:UpdateBufferData(list)
+	let prevLen = len(getline('^', '$'))
+	if prevLen == 1 && empty(getline(1))
+		if !empty(a:list)
+			call setline(1, a:list[0])
+		end
+	elseif prevLen > len(a:list)
+		keepjumps normal ggdG
+		let prevLen = 1
+		if !empty(a:list)
+			call setline(1, a:list[0])
+		end
+	end
+	call append('$', a:list[prevLen : ])
+endf
+
 function s:UpdateLogWindow(category, list)
 	if !s:HideBufInitialized(a:category)
 		return
 	end
 
 	let oldEventignore = &eventignore
+	let curWinView = winsaveview()
 	let prevBuf = bufnr('')
 	try
 		set eventignore=all
-		execute 'buffer '.s:hideBufs[a:category.id]
+		execute 'keepjumps buffer '.s:hideBufs[a:category.id]
 		setlocal noro
 
-		let prevLen = len(getline('^', '$'))
-		if prevLen == 1 && empty(getline(1))
-			if !empty(a:list)
-				call setline(1, a:list[0])
-			end
-		elseif prevLen > len(a:list)
-			normal ggdG
-			let prevLen = 1
-			if !empty(a:list)
-				call setline(1, a:list[0])
-			end
-		end
-		call append('$', a:list[prevLen : ])
+		call s:UpdateBufferData(a:list)
 	finally
 		let currentTab = tabpagenr()
 		try
@@ -53,7 +58,7 @@ function s:UpdateLogWindow(category, list)
 					for j in range(0, winnr('$'))
 						exec j.'wincmd w'
 						if bufnr('') == s:hideBufs[a:category.id]
-							normal G
+							keepjumps normal G
 						end
 					endfor
 				finally
@@ -72,7 +77,8 @@ function s:UpdateLogWindow(category, list)
 
 		setlocal ro
 		setlocal nomod
-		execute 'buffer '.prevBuf
+		execute 'keepjumps buffer '.prevBuf
+		call winrestview(curWinView)
 	endtry
 endf
 
@@ -106,7 +112,7 @@ function s:InitHideBuf(category, buf)
 	let s:hideBufs[a:category.id] = a:buf
 
 	let prevBuf = bufnr('')
-	execute 'buffer '.a:buf
+	execute 'keepjumps buffer '.a:buf
 	try
 		setlocal ma
 		setlocal noswf
@@ -114,7 +120,7 @@ function s:InitHideBuf(category, buf)
 		exec 'setlocal ft='.a:category.filetype
 		setlocal nocul
 	finally
-		execute 'buffer '.prevBuf
+		execute 'keepjumps buffer '.prevBuf
 	endtry
 endf
 
@@ -127,15 +133,20 @@ function s:OpenHideWindow(category, focus)
 		call s:InitHideBuf(a:category, buf)
 	end
 
-	let windowNumber = bufwinnr(buf)
-	if windowNumber == -1
-		botright 10split
-	else
-		exec windowNumber.'wincmd w'
-	end
+	let curWin = winnr()
+	try
+		let windowNumber = bufwinnr(buf)
+		if windowNumber == -1
+			botright 10split
+		else
+			exec windowNumber.'wincmd w'
+		end
 
-	execute 'buffer '.buf
-	call s:UpdateLogWindow(a:category, a:category.dataList)
+		execute 'keepjumps buffer '.buf
+		call s:UpdateLogWindow(a:category, a:category.dataList)
+	finally
+		exec curWin.'wincmd w'
+	endtry
 endf
 
 function s:TimerTick()
