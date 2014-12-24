@@ -2,150 +2,49 @@ let s:plugin_path = escape(expand('<sfile>:p:h'), '\')
 
 exe 'pyfile '.fnameescape(s:plugin_path).'/hide-vim.py'
 
-let s:log = []
-let s:buildLog = []
-function s:SyncEverything()
-	let linesNum = len(s:log)
-	python vim.command('let s:log += ' + str(hidePlugin.GetLogLines(string.atoi(vim.eval('len(s:log)')))))
-	if len(s:log) != linesNum
-		call s:UpdateLogWindow(s:logCategory, s:log)
-	end
+"=================================================================
 
-	let linesNum = len(s:buildLog)
-	python vim.command('let s:buildLog += ' + str(hidePlugin.GetBuildLogLines(string.atoi(vim.eval('len(s:buildLog)')))))
-	if len(s:buildLog) != linesNum
-		call s:UpdateLogWindow(s:buildLogCategory, s:buildLog)
-	end
-endf
-
-function s:UpdateBufferData(list)
-	let prevLen = len(getline('^', '$'))
-	if prevLen == 1 && empty(getline(1))
-		if !empty(a:list)
-			call setline(1, a:list[0])
-		end
-	elseif prevLen > len(a:list)
-		keepjumps normal ggdG
-		let prevLen = 1
-		if !empty(a:list)
-			call setline(1, a:list[0])
-		end
-	end
-	call append('$', a:list[prevLen : ])
-endf
-
-function s:UpdateLogWindow(category, list)
-	if !s:HideBufInitialized(a:category)
-		return
-	end
-
-	let oldEventignore = &eventignore
-	let curWinView = winsaveview()
-	let prevBuf = bufnr('')
-	try
-		set eventignore=all
-		execute 'keepjumps buffer '.s:hideBufs[a:category.id]
-		setlocal noro
-
-		call s:UpdateBufferData(a:list)
-	finally
-		let currentTab = tabpagenr()
-		try
-			for i in range(1, tabpagenr('$'))
-				exec 'tabnext '.i
-				let tabWin = winnr()
-				try
-					for j in range(0, winnr('$'))
-						exec j.'wincmd w'
-						if bufnr('') == s:hideBufs[a:category.id]
-							keepjumps normal G
-						end
-					endfor
-				finally
-					exec tabWin.'wincmd w'
-				endtry
-
-				if len(GetTabVar(i, 'NERDTreeBufName')) > 0
-					return 1
-				endif
-			endfor
-		finally
-			exec 'tabnext '.currentTab
-		endtry
-
-		let &ei = oldEventignore
-
-		setlocal ro
-		setlocal nomod
-		execute 'keepjumps buffer '.prevBuf
-		call winrestview(curWinView)
-	endtry
-endf
-
-function s:GetTabVar(tabnr, var)
-	let currentTab = tabpagenr()
-	let oldEventignore = &eventignore
-
-	try
-		set eventignore=all
-		exec 'tabnext ' . a:tabnr
-
-		if exists('t:' . a:var)
-			exec 'return {"value": t:'.a:var.'}'
-		endif
-		return {}
-	finally
-		exec 'tabnext ' . currentTab
-		let &ei = oldEventignore
-	endtry
-endfunction
-
-function s:HideBufInitialized(category)
-	return has_key(s:hideBufs, a:category.id)
-endf
-
-function s:InitHideBuf(category, buf)
-	if s:HideBufInitialized(a:category)
-		return
-	end
-
-	let s:hideBufs[a:category.id] = a:buf
-
-	let prevBuf = bufnr('')
-	execute 'keepjumps buffer '.a:buf
-	try
-		setlocal ma
-		setlocal noswf
-		setlocal ro
-		exec 'setlocal ft='.a:category.filetype
-		setlocal nocul
-	finally
-		execute 'keepjumps buffer '.prevBuf
-	endtry
-endf
-
-let s:logCategory = { 'id': 'log', 'displayName': 'log', 'filetype': 'hide-log', 'dataList': s:log }
-let s:buildLogCategory = { 'id': 'buildLog', 'displayName': 'build log', 'filetype': 'hide-build-log', 'dataList': s:buildLog }
 let s:hideBufs = { }
-function s:OpenHideWindow(category, focus)
-	let buf = bufnr('HIDE '.a:category.displayName, 1)
-	if !s:HideBufInitialized(a:category)
-		call s:InitHideBuf(a:category, buf)
+
+let s:logBufInfo = { 'id': 'log', 'displayName': 'HIDE log', 'filetype': 'hide-log' }
+function s:logBufInfo.UpdateLines()
+	python vim.command('let self.lines += ' + str(hidePlugin.GetLogLines(string.atoi(vim.eval('len(self.lines)')))))
+endf
+
+let s:buildLogBufInfo = { 'id': 'buildLog', 'displayName': 'HIDE build log', 'filetype': 'hide-build-log' }
+function s:buildLogBufInfo.UpdateLines()
+	python vim.command('let self.lines += ' + str(hidePlugin.GetBuildLogLines(string.atoi(vim.eval('len(self.lines)')))))
+endf
+
+"=================================================================
+
+function s:SyncEverything()
+	for bufId in keys(s:hideBufs)
+		call s:hideBufs[bufId].Sync()
+	endfor
+endf
+
+function s:OpenHideWindow(bufInfo, focus)
+	if !has_key(s:hideBufs, a:bufInfo.id)
+		let s:hideBufs[a:bufInfo.id] = hide#Buffer#Buffer(a:bufInfo)
 	end
 
 	let curWin = winnr()
 	try
-		let windowNumber = bufwinnr(buf)
+		let buf = s:hideBufs[a:bufInfo.id]
+		let windowNumber = bufwinnr(buf.bufNum)
 		if windowNumber == -1
 			botright 10split
 		else
 			exec windowNumber.'wincmd w'
 		end
 
-		execute 'keepjumps buffer '.buf
-		call s:UpdateLogWindow(a:category, a:category.dataList)
+		execute 'keepjumps buffer '.buf.bufNum
+		call buf.Sync()
 	finally
-		exec curWin.'wincmd w'
+		if !a:focus
+			exec curWin.'wincmd w'
+		end
 	endtry
 endf
 
@@ -169,9 +68,11 @@ function s:DoBuild(methodCall)
 	if !res
 		throw s:BuildSystemException('Another build already in progress!')
 	end
-	let s:buildLog = [ ]
+	if has_key(s:hideBufs, s:buildLogBufInfo.id)
+		let s:hideBufs[s:buildLogBufInfo.id].lines = []
+	end
 	call s:SyncEverything()
-	call s:OpenHideWindow(s:buildLogCategory, 0)
+	call s:OpenHideWindow(s:buildLogBufInfo, 0)
 endf
 
 function s:GetBuildTargets(A, L, P)
@@ -196,8 +97,8 @@ au BufWritePre * if <SID>BuildInProgress() | throw s:BuildSystemException('Save 
 
 call s:SyncEverything()
 
-command! -nargs=0 HideLog call <SID>OpenHideWindow(s:logCategory, 0)
-command! -nargs=0 HideBuildLog call <SID>OpenHideWindow(s:buildLogCategory, 0)
+command! -nargs=0 HideLog call <SID>OpenHideWindow(s:logBufInfo, 0)
+command! -nargs=0 HideBuildLog call <SID>OpenHideWindow(s:buildLogBufInfo, 0)
 command! -nargs=0 HideBuildAll call <SID>DoBuild('BuildAll()')
 command! -nargs=? -complete=custom,<SID>GetBuildTargets HideBuild call <SID>DoBuild('BuildTarget("<args>")')
 command! -nargs=? -complete=file HideBuildFile call <SID>DoBuild('BuildFile("<args>")')

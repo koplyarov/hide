@@ -58,9 +58,13 @@ class HidePlugin:
     def GetBuildTargets(self):
         return self.project.GetBuildSystem().GetTargets()
 
+    def BuildInProgress(self):
+        with self.mutex:
+            return self.buildProcessListener != None and not self.buildProcessListener.finished
+
     def __DoBuild(self, targetName, buildFunc):
         with self.mutex:
-            if self.buildProcessListener != None and not self.buildProcessListener.finished:
+            if self.BuildInProgress():
                 return False
             self.buildLog = [ 'Building "' + targetName + '":' ]
         self.buildProcess = None
