@@ -180,6 +180,10 @@ function s:GetBuildTargets(A, L, P)
 	return res
 endf
 
+function s:BuildInProgress()
+	exec 'python vim.command("return " + ("1" if hidePlugin.BuildInProgress() else "0"))'
+endf
+
 autocmd CursorHold * call <SID>TimerTick()
 autocmd CursorHoldI * call <SID>TimerTickI()
 
@@ -188,6 +192,7 @@ python import string
 python hidePlugin = HidePlugin()
 
 au VimLeavePre * python del hidePlugin
+au BufWritePre * if <SID>BuildInProgress() | throw s:BuildSystemException('Save prevented due to build in progress!') | end
 
 call s:SyncEverything()
 
