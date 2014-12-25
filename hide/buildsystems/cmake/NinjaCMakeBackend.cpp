@@ -48,7 +48,8 @@ namespace hide
 						smatch m;
 						if (regex_match(s, m, re))
 							result.push_back(m[1]);
-					}
+					},
+					[]() { }
 				));
 			ninja.reset();
 

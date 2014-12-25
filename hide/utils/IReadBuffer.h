@@ -15,6 +15,7 @@ namespace hide
 		virtual ~IReadBufferListener() { }
 
 		virtual void OnBufferChanged(const IReadBuffer& buf) { }
+		virtual void OnEndOfData() { }
 	};
 	HIDE_DECLARE_PTR(IReadBufferListener);
 

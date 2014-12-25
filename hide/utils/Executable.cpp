@@ -7,6 +7,8 @@
 #include <sstream>
 #include <thread>
 
+#include <boost/scope_exit.hpp>
+
 
 namespace hide
 {
@@ -59,6 +61,11 @@ namespace hide
 			{
 				std::array<char, 256> local_buf;
 				int ret = 0;
+
+				BOOST_SCOPE_EXIT_ALL(&) {
+					InvokeListeners(std::bind(&IReadBufferListener::OnEndOfData, std::placeholders::_1));
+				};
+
 				do
 				{
 					ret = read(_fd, local_buf.data(), local_buf.size());

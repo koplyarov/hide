@@ -6,8 +6,8 @@ namespace hide
 
 	HIDE_NAMED_LOGGER(ReadBufferLinesListener);
 
-	ReadBufferLinesListener::ReadBufferLinesListener(const CallbackFunc& callback)
-		: _callback(callback), _ofs(0)
+	ReadBufferLinesListener::ReadBufferLinesListener(const BufferCallbackFunc& bufferChangedCallback, const EndOfDataCallbackFunc& endOfDataCallback)
+		: _bufferChangedCallback(bufferChangedCallback), _endOfDataCallback(endOfDataCallback), _ofs(0)
 	{ }
 
 
@@ -23,7 +23,7 @@ namespace hide
 			if (next_new_line_it != data.end())
 			{
 				++next_new_line_it;
-				_callback(_accumStr);
+				_bufferChangedCallback(_accumStr);
 				_accumStr.clear();
 			}
 
@@ -32,6 +32,14 @@ namespace hide
 		while (new_line_it != data.end());
 
 		_ofs += data.size();
+	}
+
+
+	void ReadBufferLinesListener::OnEndOfData()
+	{
+		if (!_accumStr.empty())
+			_bufferChangedCallback(_accumStr);
+		_endOfDataCallback();
 	}
 
 }

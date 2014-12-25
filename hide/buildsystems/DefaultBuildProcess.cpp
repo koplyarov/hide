@@ -22,19 +22,19 @@ namespace hide
 		{ }
 
 		virtual void OnFinished(int retCode)
-		{
-			s_logger.Info() << "Build " << (retCode == 0 ? "succeeded" : "failed");
-			_inst->ReportFinished(retCode == 0);
-		}
+		{ _inst->SetRetCode(retCode); }
 	};
 
 
 	DefaultBuildProcess::DefaultBuildProcess(const std::string& executable, const StringArray& parameters)
+		: _stdoutClosed(false)
 	{
 		_executable = std::make_shared<Executable>(executable, parameters);
-		_executable->GetStdout()->AddListener(std::make_shared<ReadBufferLinesListener>(std::bind(&DefaultBuildProcess::ParseLine, this, std::placeholders::_1)));
+		_executable->GetStdout()->AddListener(std::make_shared<ReadBufferLinesListener>(
+				std::bind(&DefaultBuildProcess::ParseLine, this, std::placeholders::_1),
+				std::bind(&DefaultBuildProcess::PipeClosedHandler, this, std::ref(_stdoutClosed))
+			));
 		_executable->AddListener(std::make_shared<ExecutableListener>(this));
-		// TODO: fix inconsistent order of reporting lines and finished flag
 		s_logger.Info() << "Created";
 	}
 
@@ -70,6 +70,34 @@ namespace hide
 		}
 
 		ReportLine(BuildLogLine(str, issue));
+	}
+
+
+	void DefaultBuildProcess::PipeClosedHandler(bool& flag)
+	{
+		s_logger.Info() << "DefaultBuildProcess::PipeClosedHandler(bool& flag)";
+		HIDE_LOCK(_mutex);
+		flag = true;
+		TryReportFinished();
+	}
+
+
+	void DefaultBuildProcess::SetRetCode(int retCode)
+	{
+		s_logger.Info() << "DefaultBuildProcess::SetRetCode(" << retCode << ")";
+		HIDE_LOCK(_mutex);
+		_retCode = retCode;
+		TryReportFinished();
+	}
+
+
+	void DefaultBuildProcess::TryReportFinished()
+	{
+		if (_stdoutClosed && _retCode)
+		{
+			s_logger.Info() << "Build " << (*_retCode == 0 ? "succeeded" : "failed");
+			ReportFinished(*_retCode == 0);
+		}
 	}
 
 }

@@ -17,18 +17,21 @@ namespace hide
 
 	class ReadBufferLinesListener : public virtual IReadBufferListener
 	{
-		typedef std::function<void(const std::string&)>		CallbackFunc;
+		typedef std::function<void(const std::string&)>		BufferCallbackFunc;
+		typedef std::function<void()>						EndOfDataCallbackFunc;
 
 	private:
 		static NamedLogger		s_logger;
-		CallbackFunc			_callback;
+		BufferCallbackFunc		_bufferChangedCallback;
+		EndOfDataCallbackFunc	_endOfDataCallback;
 		int64_t					_ofs;
 		std::string				_accumStr;
 
 	public:
-		ReadBufferLinesListener(const CallbackFunc& callback);
+		ReadBufferLinesListener(const BufferCallbackFunc& bufferChangedCallback, const EndOfDataCallbackFunc& endOfDataCallback);
 
 		virtual void OnBufferChanged(const IReadBuffer& buf);
+		virtual void OnEndOfData();
 	};
 
 }

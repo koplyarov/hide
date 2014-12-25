@@ -20,6 +20,9 @@ namespace hide
 		ExecutablePtr			_executable;
 		IExecutableListenerPtr	_executableListener;
 		IReadBufferListenerPtr	_stdoutListener;
+		std::recursive_mutex	_mutex;
+		bool					_stdoutClosed;
+		boost::optional<int>	_retCode;
 
 	public:
 		DefaultBuildProcess(const std::string& executable, const StringArray& parameters);
@@ -27,7 +30,9 @@ namespace hide
 
 	private:
 		void ParseLine(const std::string& str);
-		void OnFinished();
+		void PipeClosedHandler(bool& flag);
+		void SetRetCode(int retCode);
+		void TryReportFinished();
 	};
 
 }
