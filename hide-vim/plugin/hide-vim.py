@@ -39,6 +39,7 @@ class BuildProcessListener(hide.IBuildProcessListener):
 
 class HidePlugin:
     def __init__(self):
+        hide.SetCurrentThreadName('vim')
         self.mutex = RLock()
         self.log = [ ]
         self.buildLog = [ ]

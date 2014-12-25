@@ -43,7 +43,9 @@ set(hide_SRCS
 	hide/lang_plugins/cpp/clang/Index.cpp
 	hide/utils/Executable.cpp
 	hide/utils/Logger.cpp
+	hide/utils/LoggerMessage.cpp
 	hide/utils/ReadBufferLinesListener.cpp
+	hide/utils/Thread.cpp
 )
 
 add_library(hide SHARED ${hide_SRCS})

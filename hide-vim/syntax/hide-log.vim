@@ -7,7 +7,7 @@ syntax match logLevelDebug /\[Debug\]/
 syntax match logLevelInfo /\[Info\]/
 syntax match logLevelWarning /\[Warning\]/
 syntax match logLevelError /\[Error\]/
-syntax region logText matchgroup=logThread start=/\({[_a-zA-Z][_a-zA-Z0-9]*}\)\|\({[_a-zA-Z]*\sid=0x\x*}\)\|\({[_a-zA-Z ]*\.\sId:\s*\x*}\)/ end=/$/ contains=logClass
+syntax region logText matchgroup=logThread start=/\({[_a-zA-Z0-9()]*}\)/ end=/$/ contains=logClass
 syntax match logClass /\[\(\(Debug\>\)\@!\&\(Info\>\)\@!\&\(Warning\>\)\@!\&\(Error\>\)\@!\&\([A-Za-z_][A-Za-z_0-9:]*\)\)\k\+\]/
 
 highlight link logTime String

@@ -6,6 +6,7 @@
 
 #include <hide/utils/Logger.h>
 #include <hide/utils/StringBuilder.h>
+#include <hide/utils/Thread.h>
 #include <hide/utils/Utils.h>
 
 
@@ -34,7 +35,7 @@ namespace hide
 				{ }
 
 				~Impl()
-				{ Logger::Log(LoggerMessage(_namedLogger->_name, _logLevel, _stringBuilder)); }
+				{ Logger::Log(LoggerMessage(GetCurrentThreadName(), _namedLogger->_name, _logLevel, _stringBuilder)); }
 			};
 			HIDE_DECLARE_PTR(Impl);
 

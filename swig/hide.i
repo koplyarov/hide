@@ -31,6 +31,9 @@ using namespace hide;
 
 %include <hide/utils/Utils.h>
 
+%ignore hide::MakeThread;
+%include <hide/utils/Thread.h>
+
 %implicitconv hide::LogLevel;
 %include <hide/utils/LoggerMessage.h>
 

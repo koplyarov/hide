@@ -9,6 +9,8 @@
 
 #include <boost/scope_exit.hpp>
 
+#include <hide/utils/Thread.h>
+
 
 namespace hide
 {
@@ -31,7 +33,7 @@ namespace hide
 				: _fd(fd)
 			{
 				//fcntl(out_pipe[read_index], F_SETFL, O_NONBLOCK | O_ASYNC); // TODO: check errors
-				_thread = std::thread(std::bind(&PipeReadBuffer::ThreadFunc, this));
+				_thread = MakeThread("pipeReadBuffer(" + std::to_string(fd) + ")", std::bind(&PipeReadBuffer::ThreadFunc, this));
 			}
 
 			~PipeReadBuffer()
@@ -133,7 +135,7 @@ namespace hide
 			_stdout.reset(new PipeReadBuffer(out_pipe[read_index]));
 			_stderr.reset(new PipeReadBuffer(err_pipe[read_index]));
 
-			_thread = std::thread(std::bind(&Executable::ThreadFunc, this));
+			_thread = MakeThread("executable(" + std::to_string(_pid) + ")", std::bind(&Executable::ThreadFunc, this));
 		}
 		else
 		{

@@ -19,6 +19,8 @@ class BuildProcessListener(hide.IBuildProcessListener):
     def OnFinished(self, succeeded):
         print "BUILD " + ("SUCCEEDED" if succeeded else "FAILED")
 
+hide.SetCurrentThreadName('main')
+
 sink = LoggerSink()
 sink.__disown__()
 hide.Logger.AddSink(sink);

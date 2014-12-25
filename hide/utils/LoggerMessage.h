@@ -38,27 +38,22 @@ namespace hide
 	class LoggerMessage
 	{
 	private:
+		std::string		_threadName;
 		std::string		_loggerName;
 		LogLevel		_logLevel;
 		std::string		_text;
 
 	public:
-		LoggerMessage(const std::string& loggerName, LogLevel logLevel, const std::string& text)
-			: _loggerName(loggerName), _logLevel(logLevel), _text(text)
+		LoggerMessage(const std::string& threadName, const std::string& loggerName, LogLevel logLevel, const std::string& text)
+			: _threadName(threadName), _loggerName(loggerName), _logLevel(logLevel), _text(text)
 		{ }
 
+		std::string GetThreadName() const	{ return _threadName; }
 		std::string GetLoggerName() const	{ return _loggerName; }
 		LogLevel GetLogLevel() const		{ return _logLevel; }
 		std::string GetText() const 		{ return _text; }
 
-		std::string ToString() const
-		{
-			std::string loglevel_str = "[" + _logLevel.ToString() + "]";
-			int whitespaces_count = sizeof("[Warning]") - 1 - loglevel_str.size();
-			if (whitespaces_count > 0)
-				loglevel_str.append(whitespaces_count, ' ');
-			return StringBuilder() % loglevel_str % " [" % _loggerName % "] " % _text;
-		}
+		std::string ToString() const;
 
 		HIDE_DECLARE_SWIG_TO_STRING_WRAPPER();
 	};
