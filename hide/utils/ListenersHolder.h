@@ -8,6 +8,7 @@
 
 #include <boost/mpl/empty_base.hpp>
 
+#include <hide/utils/NamedLogger.h>
 #include <hide/utils/Utils.h>
 
 
@@ -23,6 +24,7 @@ namespace hide
 		typedef std::set<ListenerTypePtr, std::owner_less<ListenerTypePtr> >	ListenersSet;
 
 	private:
+		static NamedLogger				s_logger;
 		ListenersSet					_listeners;
 		mutable std::recursive_mutex	_mutex;
 
@@ -31,7 +33,10 @@ namespace hide
 		{
 			HIDE_LOCK(_mutex);
 			_listeners.insert(listener);
-			PopulateState(listener);
+			try
+			{ PopulateState(listener); }
+			catch (const std::exception& ex)
+			{ s_logger.Error() << "Uncaught exception in PopulateState for listener: " << boost::diagnostic_information(ex); }
 		}
 
 		virtual void RemoveListener(const ListenerTypePtr& listener)
@@ -50,9 +55,17 @@ namespace hide
 		{
 			HIDE_LOCK(_mutex);
 			for (auto l : _listeners)
-				f(l);
+			{
+				try
+				{ f(l); }
+				catch (const std::exception& ex)
+				{ s_logger.Error() << "Uncaught exception in listener: " << boost::diagnostic_information(ex); }
+			}
 		}
 	};
+
+	template < typename ListenerType_, typename Interface_ >
+	HIDE_NAMED_LOGGER(ListenersHolder<ListenerType_, Interface_>);
 
 }
 
