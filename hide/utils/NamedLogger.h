@@ -12,7 +12,7 @@
 namespace hide
 {
 
-#define HIDE_NAMED_LOGGER(Class_) NamedLogger Class_::s_logger(#Class_);
+#define HIDE_NAMED_LOGGER(...) NamedLogger __VA_ARGS__::s_logger(#__VA_ARGS__);
 
 	class NamedLogger
 	{
