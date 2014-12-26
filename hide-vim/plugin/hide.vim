@@ -6,15 +6,8 @@ exe 'pyfile '.fnameescape(s:plugin_path).'/hide-vim.py'
 
 let s:hideBufs = { }
 
-let s:logBufInfo = { 'id': 'log', 'displayName': 'HIDE log', 'filetype': 'hide-log' }
-function s:logBufInfo.UpdateLines()
-	python vim.command('let self.lines += ' + str(hidePlugin.GetLogLines(string.atoi(vim.eval('len(self.lines)')))))
-endf
-
-let s:buildLogBufInfo = { 'id': 'buildLog', 'displayName': 'HIDE build log', 'filetype': 'hide-build-log' }
-function s:buildLogBufInfo.UpdateLines()
-	python vim.command('let self.lines += ' + str(hidePlugin.GetBuildLogLines(string.atoi(vim.eval('len(self.lines)')))))
-endf
+let s:logBufInfo = { 'id': 'log', 'displayName': 'HIDE log', 'filetype': 'hide-log', 'modelName': 'logModel' }
+let s:buildLogBufInfo = { 'id': 'buildLog', 'displayName': 'HIDE build log', 'filetype': 'hide-build-log', 'modelName': 'buildLogModel' }
 
 "=================================================================
 
@@ -67,9 +60,6 @@ function s:DoBuild(methodCall)
 	exec 'python vim.command("let l:res = " + ("1" if hidePlugin.'.a:methodCall.' else "0"))'
 	if !res
 		throw s:BuildSystemException('Another build already in progress!')
-	end
-	if has_key(s:hideBufs, s:buildLogBufInfo.id)
-		let s:hideBufs[s:buildLogBufInfo.id].lines = []
 	end
 	call s:SyncEverything()
 	call s:OpenHideWindow(s:buildLogBufInfo, 0)

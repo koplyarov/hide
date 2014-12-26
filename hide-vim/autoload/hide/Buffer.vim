@@ -1,3 +1,7 @@
+function s:BufferViewException(msg)
+	return "HIDE.BufferViewException: ".a:msg
+endf
+
 "bufInfo: { 'id': <string>, 'displayName': <string>, 'filetype': <string> }
 function hide#Buffer#Buffer(bufInfo)
 	if !exists('s:BufferPrototype')
@@ -18,10 +22,22 @@ function hide#Buffer#Buffer(bufInfo)
 		endf
 
 		function s:BufferPrototype.Sync()
-			let prevLinesNum = len(self.lines)
-			call self.UpdateLines()
-			if len(self.lines) != prevLinesNum
-				call self.Update()
+			exec 'python vim.command("let l:events = [" + str.join(",", map(lambda e: e.ToVimDictionary(), hidePlugin.'.self.modelName.'.GetEvents())) + "]")'
+			for e in events
+				if e.type == 'reset'
+					let self.lines = []
+				elseif e.type == 'inserted'
+					for idx in range(e.begin, e.end - 1)
+						exec 'python vim.command("let l:row = ''" + hidePlugin.'.self.modelName.'.GetRow('.idx.').ToVimString() + "''")'
+						call insert(self.lines, row, idx)
+					endfor
+				else
+					throw s:BufferViewException('Unknown ModelEvent type: "'.e.type.'"')
+				end
+			endfor
+
+			if !empty(events)
+				call self._Update()
 			end
 		endf
 
@@ -41,7 +57,7 @@ function hide#Buffer#Buffer(bufInfo)
 			call append('$', self.lines[prevLen : ])
 		endf
 
-		function s:BufferPrototype.Update()
+		function s:BufferPrototype._Update()
 			let oldEventignore = &eventignore
 			let curWinView = winsaveview()
 			let prevBuf = bufnr('')
