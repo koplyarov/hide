@@ -7,7 +7,26 @@ exe 'pyfile '.fnameescape(s:plugin_path).'/hide-vim.py'
 let s:hideBufs = { }
 
 let s:logBufInfo = { 'id': 'log', 'displayName': 'HIDE log', 'filetype': 'hide-log', 'modelName': 'logModel' }
+
 let s:buildLogBufInfo = { 'id': 'buildLog', 'displayName': 'HIDE build log', 'filetype': 'hide-build-log', 'modelName': 'buildLogModel' }
+function s:buildLogBufInfo.Action(idx)
+	exec 'python vim.command("let l:location = " + hidePlugin.buildLogModel.GetRow('.a:idx.').GetLocationAsVimDictionary())'
+
+	if empty(location)
+		return
+	end
+
+	let max_winnr = winnr('$')
+	for w in range(max_winnr, 1, -1)
+		exec w.'wincmd w'
+		if !exists('b:hideBuffer')
+			execute 'e '.location.filename
+			call setpos('.', [ bufnr(''), location.line, location.column, 0 ])
+			break
+		end
+	endfor
+endf
+
 
 "=================================================================
 

@@ -35,6 +35,7 @@ using namespace hide;
 %include <hide/utils/Thread.h>
 
 %implicitconv hide::LogLevel;
+%copyctor hide::LoggerMessage;
 %include <hide/utils/LoggerMessage.h>
 
 %feature("director") hide::ILoggerSink;
@@ -46,6 +47,7 @@ using namespace hide;
 %include <hide/Location.h>
 
 %shared_ptr(hide::BuildIssue)
+%copyctor hide::BuildLogLine;
 %include <hide/BuildLogLine.h>
 
 %shared_ptr(hide::IFile)

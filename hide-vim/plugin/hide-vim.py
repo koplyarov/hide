@@ -44,23 +44,18 @@ class Model:
 
 class LogModelRow:
     def __init__(self, msg):
-        self.__msg = msg
-        self.__str = self.__ToVimString()
-
-    def __ToVimString(self):
-        return str(self.__msg)
+        self.__msg = hide.LoggerMessage(msg)
 
     def ToVimString(self):
-        return self.__str
+        return str(self.__msg)
 
 
 class BuildLogModelRow:
     def __init__(self, type, line):
         self.__type = type
-        self.__line = line
-        self.__str = self.__ToVimString()
+        self.__line = line if type == 'serviceMsg' else hide.BuildLogLine(line)
 
-    def __ToVimString(self):
+    def ToVimString(self):
         if self.__type == 'serviceMsg':
             return self.__line
         else:
@@ -70,8 +65,12 @@ class BuildLogModelRow:
                 issue = self.__line.GetIssue()
                 return str(issue.GetType()).upper() + ': ' + issue.GetText()
 
-    def ToVimString(self):
-        return self.__str
+    def GetLocationAsVimDictionary(self):
+        if self.__type == 'buildLogMsg' and not (self.__line.GetIssue() is None):
+            l = self.__line.GetIssue().GetLocation()
+            return '{ "filename": "' + l.GetFilename() + '", "line": ' + str(l.GetLine()) + ', "column": ' + str(l.GetColumn()) + ' }'
+        else:
+            return '{}'
 
 
 class LoggerSink(hide.ILoggerSink):

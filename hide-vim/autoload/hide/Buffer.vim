@@ -16,9 +16,18 @@ function hide#Buffer#Buffer(bufInfo)
 				setlocal ro
 				exec 'setlocal ft='.self.filetype
 				setlocal nocul
+				let b:hideBuffer = self
+				nmap <buffer> <CR> :call b:hideBuffer.EnterPressed()<CR>
 			finally
 				execute 'keepjumps buffer '.prevBuf
 			endtry
+		endf
+
+		function s:BufferPrototype.EnterPressed()
+			let idx = line('.') - 1
+			if (has_key(self, 'Action'))
+				call self.Action(idx)
+			end
 		endf
 
 		function s:BufferPrototype.Sync()
