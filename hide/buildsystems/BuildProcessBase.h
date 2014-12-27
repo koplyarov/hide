@@ -22,12 +22,12 @@ namespace hide
 		typedef std::set<IBuildProcessListenerPtr, std::owner_less<IBuildProcessListenerPtr> >	ListenersSet;
 
 	protected:
-		boost::optional<bool>	_succeeded;
-		LogLines				_lines;
+		boost::optional<BuildStatus>	_status;
+		LogLines						_lines;
 
 	protected:
 		void ReportLine(const BuildLogLine& line);
-		void ReportFinished(bool succeeded);
+		void ReportFinished(BuildStatus status);
 
 		virtual void PopulateState(const IBuildProcessListenerPtr& listener) const;
 	};

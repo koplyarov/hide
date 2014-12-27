@@ -88,6 +88,10 @@ function s:DoBuild(methodCall)
 	call s:OpenHideWindow(s:buildLogBufInfo, 0)
 endf
 
+function s:StopBuild()
+	python hidePlugin.InterruptBuild()
+endf
+
 function s:GetBuildTargets(A, L, P)
 	python vim.command('let l:res = join(' + str(list(hidePlugin.GetBuildTargets())) + ', "\n")')
 	call s:SyncEverything()
@@ -113,6 +117,7 @@ call s:SyncEverything()
 command! -nargs=0 HideLog call <SID>OpenHideWindow(s:logBufInfo, 0)
 command! -nargs=0 HideBuildLog call <SID>OpenHideWindow(s:buildLogBufInfo, 0)
 command! -nargs=0 HideBuildAll call <SID>DoBuild('BuildAll()')
+command! -nargs=0 HideStopBuild call <SID>StopBuild()
 command! -nargs=? -complete=custom,<SID>GetBuildTargets HideBuild call <SID>DoBuild('BuildTarget("<args>")')
 command! -nargs=? -complete=file HideBuildFile call <SID>DoBuild('BuildFile("<args>")')
 

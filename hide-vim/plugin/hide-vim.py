@@ -95,11 +95,11 @@ class BuildProcessListener(hide.IBuildProcessListener):
     def OnLine(self, line):
         self.__model.Append(BuildLogModelRow('buildLogMsg', line))
 
-    def OnFinished(self, succeeded):
+    def OnFinished(self, status):
         with self.__mutex:
             self.finished = True
-            self.succeeded = succeeded
-            self.__model.Append(BuildLogModelRow('serviceMsg', 'BUILD ' + ('SUCCEEDED' if succeeded else 'FAILED')))
+            self.status = status
+            self.__model.Append(BuildLogModelRow('serviceMsg', 'BUILD ' + str(status).upper()))
 
 
 class HidePlugin:
@@ -119,12 +119,23 @@ class HidePlugin:
 
         self.project = hide.Project.CreateAuto(['.*\\bCMakeFiles\\b.*', '.*\\.git\\b.*'])
 
+    def __del__(self):
+        self.InterruptBuild()
+        hide.Logger.RemoveSink(self.loggerSink)
+
     def GetBuildTargets(self):
         return self.project.GetBuildSystem().GetTargets()
 
     def BuildInProgress(self):
         with self.__mutex:
             return self.__buildProcessListener != None and not self.__buildProcessListener.finished
+
+    def InterruptBuild(self):
+        with self.__mutex:
+            if not self.BuildInProgress():
+                return
+        if not self.__buildProcess is None:
+            self.__buildProcess.Interrupt()
 
     def __DoBuild(self, targetName, buildFunc):
         with self.__mutex:
@@ -146,6 +157,3 @@ class HidePlugin:
 
     def BuildFile(self, filename):
         return self.__DoBuild(filename, lambda bs: bs.BuildFile(self.project.GetFileByPath(filename)))
-
-    def __del__(self):
-        hide.Logger.RemoveSink(self.loggerSink)

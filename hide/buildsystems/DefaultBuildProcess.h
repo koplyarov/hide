@@ -21,12 +21,15 @@ namespace hide
 		IExecutableListenerPtr	_executableListener;
 		IReadBufferListenerPtr	_stdoutListener;
 		std::recursive_mutex	_mutex;
+		bool					_interrupted;
 		bool					_stdoutClosed;
 		boost::optional<int>	_retCode;
 
 	public:
 		DefaultBuildProcess(const std::string& executable, const StringArray& parameters);
 		~DefaultBuildProcess();
+
+		virtual void Interrupt();
 
 	private:
 		void ParseLine(const std::string& str);

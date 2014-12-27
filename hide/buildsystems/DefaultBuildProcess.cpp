@@ -27,7 +27,7 @@ namespace hide
 
 
 	DefaultBuildProcess::DefaultBuildProcess(const std::string& executable, const StringArray& parameters)
-		: _stdoutClosed(false)
+		: _stdoutClosed(false), _interrupted(false)
 	{
 		_executable = std::make_shared<Executable>(executable, parameters);
 		_executable->GetStdout()->AddListener(std::make_shared<ReadBufferLinesListener>(
@@ -43,6 +43,15 @@ namespace hide
 	{
 		s_logger.Info() << "Destroying";
 		_executable.reset();
+	}
+
+
+	void DefaultBuildProcess::Interrupt()
+	{
+		s_logger.Info() << "Interrupt()";
+		_executable->Interrupt();
+		HIDE_LOCK(_mutex);
+		_interrupted = true;
 	}
 
 
@@ -95,8 +104,9 @@ namespace hide
 	{
 		if (_stdoutClosed && _retCode)
 		{
-			s_logger.Info() << "Build " << (*_retCode == 0 ? "succeeded" : "failed");
-			ReportFinished(*_retCode == 0);
+			BuildStatus status = _interrupted ? BuildStatus::Interrupted : (*_retCode == 0 ? BuildStatus::Succeeded : BuildStatus::Failed);
+			s_logger.Info() << "Build " << status;
+			ReportFinished(status);
 		}
 	}
 

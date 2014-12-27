@@ -12,11 +12,11 @@ namespace hide
 	}
 
 
-	void BuildProcessBase::ReportFinished(bool succeeded)
+	void BuildProcessBase::ReportFinished(BuildStatus status)
 	{
 		HIDE_LOCK(GetMutex());
-		_succeeded = succeeded;
-		InvokeListeners(std::bind(&IBuildProcessListener::OnFinished, std::placeholders::_1, *_succeeded));
+		_status = status;
+		InvokeListeners(std::bind(&IBuildProcessListener::OnFinished, std::placeholders::_1, *_status));
 	}
 
 
@@ -24,8 +24,8 @@ namespace hide
 	{
 		for (auto l : _lines)
 			listener->OnLine(l);
-		if (_succeeded)
-			listener->OnFinished(*_succeeded);
+		if (_status)
+			listener->OnFinished(*_status);
 	}
 
 }

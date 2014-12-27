@@ -17,12 +17,35 @@ namespace hide
 	HIDE_DECLARE_MAP(String, IBuildConfigPtr);
 
 
+	struct BuildStatus
+	{
+		HIDE_ENUM_VALUES(Succeeded, Failed, Interrupted);
+		HIDE_ENUM_CLASS(BuildStatus);
+
+		BuildStatus()
+			: _val(Succeeded)
+		{ }
+
+		std::string ToString() const
+		{
+			switch (GetRaw())
+			{
+			case BuildStatus::Succeeded:	return "Succeeded";
+			case BuildStatus::Failed:		return "Failed";
+			case BuildStatus::Interrupted:	return "Interrupted";
+			}
+		}
+
+		HIDE_DECLARE_SWIG_TO_STRING_WRAPPER();
+	};
+
+
 	struct IBuildProcessListener
 	{
 		virtual ~IBuildProcessListener() { }
 
 		virtual void OnLine(const BuildLogLine& line) { }
-		virtual void OnFinished(bool succeeded) { }
+		virtual void OnFinished(BuildStatus status) { }
 	};
 	HIDE_DECLARE_PTR(IBuildProcessListener);
 
@@ -30,6 +53,8 @@ namespace hide
 	struct IBuildProcess
 	{
 		virtual ~IBuildProcess() { }
+
+		virtual void Interrupt() { HIDE_PURE_VIRTUAL_CALL(); }
 
 		virtual void AddListener(const IBuildProcessListenerPtr& listener) { HIDE_PURE_VIRTUAL_CALL(); }
 		virtual void RemoveListener(const IBuildProcessListenerPtr& listener) { HIDE_PURE_VIRTUAL_CALL(); }
