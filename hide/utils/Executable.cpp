@@ -181,6 +181,24 @@ namespace hide
 	}
 
 
+	void Executable::Interrupt()
+	{
+		s_logger.Debug() << "Executable::Interrupt()";
+#if HIDE_PLATFORM_POSIX
+		// TODO: suppress repeated Interrupt calls
+		int ret = kill(_pid, SIGINT);
+		if (ret != 0)
+		{
+			if (errno == ESRCH)
+				return;
+			BOOST_THROW_EXCEPTION(std::runtime_error("Could not kill " + std::to_string(_pid) + " child process!"));
+		}
+#else
+#	error Executable::Interrupt is not implemented
+#endif
+	}
+
+
 	void Executable::PopulateState(const IExecutableListenerPtr& listener) const
 	{
 		if (_retCode)

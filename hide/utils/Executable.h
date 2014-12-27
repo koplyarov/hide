@@ -45,6 +45,8 @@ namespace hide
 		Executable(const std::string& executable, const StringArray& parameters);
 		~Executable();
 
+		void Interrupt();
+
 		IReadBufferPtr GetStdout() const { return _stdout; }
 		IReadBufferPtr GetStderr() const { return _stderr; }
 
