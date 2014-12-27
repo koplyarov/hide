@@ -42,6 +42,10 @@ class Model:
             return self.__rows[idx]
 
 
+def LocationAsVimDictionary(l):
+    return '{ "filename": "' + l.GetFilename() + '", "line": ' + str(l.GetLine()) + ', "column": ' + str(l.GetColumn()) + ' }'
+
+
 class LogModelRow:
     def __init__(self, msg):
         self.__msg = hide.LoggerMessage(msg)
@@ -67,8 +71,7 @@ class BuildLogModelRow:
 
     def GetLocationAsVimDictionary(self):
         if self.__type == 'buildLogMsg' and not (self.__line.GetIssue() is None):
-            l = self.__line.GetIssue().GetLocation()
-            return '{ "filename": "' + l.GetFilename() + '", "line": ' + str(l.GetLine()) + ', "column": ' + str(l.GetColumn()) + ' }'
+            return LocationAsVimDictionary(self.__line.GetIssue().GetLocation())
         else:
             return '{}'
 

@@ -11,24 +11,28 @@ let s:logBufInfo = { 'id': 'log', 'displayName': 'HIDE log', 'filetype': 'hide-l
 let s:buildLogBufInfo = { 'id': 'buildLog', 'displayName': 'HIDE build log', 'filetype': 'hide-build-log', 'modelName': 'buildLogModel' }
 function s:buildLogBufInfo.Action(idx)
 	exec 'python vim.command("let l:location = " + hidePlugin.buildLogModel.GetRow('.a:idx.').GetLocationAsVimDictionary())'
-
-	if empty(location)
-		return
-	end
-
-	let max_winnr = winnr('$')
-	for w in range(max_winnr, 1, -1)
-		exec w.'wincmd w'
-		if !exists('b:hideBuffer')
-			execute 'e '.location.filename
-			call setpos('.', [ bufnr(''), location.line, location.column, 0 ])
-			break
-		end
-	endfor
+	call s:GotoLocation(location)
 endf
 
 
 "=================================================================
+
+function s:GotoLocation(location)
+	if empty(a:location)
+		return
+	end
+
+	let max_winnr = winnr('$')
+	for w in [ winnr() ] + range(max_winnr, 1, -1)
+		exec w.'wincmd w'
+		if !exists('b:hideBuffer')
+			execute 'e '.a:location.filename
+			call setpos('.', [ bufnr(''), a:location.line, a:location.column, 0 ])
+			normal zz
+			break
+		end
+	endfor
+endf
 
 function s:SyncEverything()
 	for bufId in keys(s:hideBufs)
