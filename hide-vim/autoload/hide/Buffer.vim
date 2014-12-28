@@ -20,7 +20,7 @@ function hide#Buffer#Buffer(bufInfo)
 				nmap <buffer> <CR> :call b:hideBuffer._EnterPressed()<CR>
 				nmap <buffer> <2-LeftMouse> :call b:hideBuffer._EnterPressed()<CR>
 				au BufWinEnter <buffer> call b:hideBuffer._SetHighlights()
-				au BufWinLeave <buffer> call b:hideBuffer._ResetHighlights()
+				au BufWinLeave <buffer> if exists('b:hideBuffer') | call b:hideBuffer._ResetHighlights() | end
 			finally
 				execute 'keepjumps buffer '.prevBuf
 			endtry
@@ -40,22 +40,19 @@ function hide#Buffer#Buffer(bufInfo)
 			end
 		endf
 
+		function s:BufferPrototype._UpdateHighlights()
+			call self._ForEachMyWindow(self._SetHighlights)
+		endf
+
 		function s:BufferPrototype._FocusLine(lineNum)
-			let prevBuf = bufnr('')
 			let self._focusedLine = a:lineNum
-			execute 'keepjumps buffer '.self.bufNum
-			try
-				call self._SetHighlights()
-			finally
-				execute 'keepjumps buffer '.prevBuf
-			endtry
+			call self._UpdateHighlights()
 		endf
 
 		function s:BufferPrototype._EnterPressed()
 			let idx = line('.') - 1
-			call self._FocusLine(idx)
 			let focus_cur_line = (has_key(self, 'Action')) && self.Action(idx)
-			"call self._FocusLine(focus_cur_line ? idx : '')
+			call self._FocusLine(focus_cur_line ? idx : '')
 		endf
 
 		function s:BufferPrototype.Sync()
@@ -74,63 +71,76 @@ function hide#Buffer#Buffer(bufInfo)
 			endfor
 
 			if !empty(events)
-				call self._Update()
+				try
+					call self._DoInBuffer(self._UpdateData)
+				finally
+					call self._ForEachMyWindow(self._ScrollDown)
+				endtry
 			end
 		endf
 
 		function s:BufferPrototype._UpdateData()
-			let prevLen = len(getline('^', '$'))
-			if prevLen == 1 && empty(getline(1))
-				if !empty(self._lines)
-					call setline(1, self._lines[0])
+			setlocal noro
+			try
+				let prevLen = len(getline('^', '$'))
+				if prevLen == 1 && empty(getline(1))
+					if !empty(self._lines)
+						call setline(1, self._lines[0])
+					end
+				elseif prevLen > len(self._lines)
+					keepjumps normal ggdG
+					let prevLen = 1
+					if !empty(self._lines)
+						call setline(1, self._lines[0])
+					end
 				end
-			elseif prevLen > len(self._lines)
-				keepjumps normal ggdG
-				let prevLen = 1
-				if !empty(self._lines)
-					call setline(1, self._lines[0])
-				end
-			end
-			call append('$', self._lines[prevLen : ])
+				call append('$', self._lines[prevLen : ])
+			finally
+				setlocal ro
+				setlocal nomod
+			endtry
 		endf
 
-		function s:BufferPrototype._Update()
+		function s:BufferPrototype._ScrollDown()
+			keepjumps normal G
+		endf
+
+		function s:BufferPrototype._DoInBuffer(func)
 			let oldEventignore = &eventignore
 			let curWinView = winsaveview()
 			let prevBuf = bufnr('')
 			try
 				set eventignore=all
 				execute 'keepjumps buffer '.self.bufNum
-				setlocal noro
-
-				call self._UpdateData()
+				call call(a:func, [], self)
 			finally
-				let currentTab = tabpagenr()
-				try
-					for i in range(1, tabpagenr('$'))
-						exec 'tabnext '.i
-						let tabWin = winnr()
-						try
-							for j in range(0, winnr('$'))
-								exec j.'wincmd w'
-								if bufnr('') == self.bufNum
-									keepjumps normal G
-								end
-							endfor
-						finally
-							exec tabWin.'wincmd w'
-						endtry
-					endfor
-				finally
-					exec 'tabnext '.currentTab
-				endtry
-
 				let &ei = oldEventignore
-
-				setlocal ro
-				setlocal nomod
 				execute 'keepjumps buffer '.prevBuf
 				call winrestview(curWinView)
+			endtry
+		endf
+
+		function s:BufferPrototype._ForEachMyWindow(func)
+			let oldEventignore = &eventignore
+			let currentTab = tabpagenr()
+			try
+				for i in range(1, tabpagenr('$'))
+					exec 'tabnext '.i
+					let tabWin = winnr()
+					try
+						for j in range(1, winnr('$'))
+							exec j.'wincmd w'
+							if bufnr('') == self.bufNum
+								call call(a:func, [], self)
+							end
+						endfor
+					finally
+						exec tabWin.'wincmd w'
+					endtry
+				endfor
+			finally
+				exec 'tabnext '.currentTab
+				let &ei = oldEventignore
 			endtry
 		endf
 	end
