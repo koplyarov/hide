@@ -12,6 +12,7 @@ let s:buildLogBufInfo = { 'id': 'buildLog', 'displayName': 'HIDE build log', 'fi
 function s:buildLogBufInfo.Action(idx)
 	exec 'python vim.command("let l:location = " + hidePlugin.buildLogModel.GetRow('.a:idx.').GetLocationAsVimDictionary())'
 	call s:GotoLocation(location)
+	return !empty(location)
 endf
 
 

@@ -16,4 +16,6 @@ highlight link buildSucceeded Type
 highlight link buildFailed Error
 highlight link buildInterrupted StatusLine
 
+highlight focusedLine ctermbg=darkred guibg=darkred
+
 let b:current_syntax = "hide-build-log"

@@ -17,28 +17,56 @@ function hide#Buffer#Buffer(bufInfo)
 				exec 'setlocal ft='.self.filetype
 				setlocal nocul
 				let b:hideBuffer = self
-				nmap <buffer> <CR> :call b:hideBuffer.EnterPressed()<CR>
+				nmap <buffer> <CR> :call b:hideBuffer._EnterPressed()<CR>
+				nmap <buffer> <2-LeftMouse> :call b:hideBuffer._EnterPressed()<CR>
+				au BufWinEnter <buffer> call b:hideBuffer._SetHighlights()
+				au BufWinLeave <buffer> call b:hideBuffer._ResetHighlights()
 			finally
 				execute 'keepjumps buffer '.prevBuf
 			endtry
 		endf
 
-		function s:BufferPrototype.EnterPressed()
-			let idx = line('.') - 1
-			if (has_key(self, 'Action'))
-				call self.Action(idx)
+		function s:BufferPrototype._SetHighlights()
+			call self._ResetHighlights()
+			if !empty(self._focusedLine)
+				let self._focusedLineMatchId = matchadd('focusedLine', '\%'.(self._focusedLine + 1).'l')
 			end
+		endf
+
+		function s:BufferPrototype._ResetHighlights()
+			if has_key(self, '_focusedLineMatchId')
+				call matchdelete(self._focusedLineMatchId)
+				unlet self._focusedLineMatchId
+			end
+		endf
+
+		function s:BufferPrototype._FocusLine(lineNum)
+			let prevBuf = bufnr('')
+			let self._focusedLine = a:lineNum
+			execute 'keepjumps buffer '.self.bufNum
+			try
+				call self._SetHighlights()
+			finally
+				execute 'keepjumps buffer '.prevBuf
+			endtry
+		endf
+
+		function s:BufferPrototype._EnterPressed()
+			let idx = line('.') - 1
+			call self._FocusLine(idx)
+			let focus_cur_line = (has_key(self, 'Action')) && self.Action(idx)
+			"call self._FocusLine(focus_cur_line ? idx : '')
 		endf
 
 		function s:BufferPrototype.Sync()
 			exec 'python vim.command("let l:events = [" + str.join(",", map(lambda e: e.ToVimDictionary(), hidePlugin.'.self.modelName.'.GetEvents())) + "]")'
 			for e in events
 				if e.type == 'reset'
-					let self.lines = []
+					let self._lines = []
 				elseif e.type == 'inserted'
 					for idx in range(e.begin, e.end - 1)
 						exec 'python vim.command("let l:row = ''" + hidePlugin.'.self.modelName.'.GetRow('.idx.').ToVimString() + "''")'
-						call insert(self.lines, row, idx)
+						call insert(self._lines, row, idx)
 					endfor
 				else
 					throw s:BufferViewException('Unknown ModelEvent type: "'.e.type.'"')
@@ -53,17 +81,17 @@ function hide#Buffer#Buffer(bufInfo)
 		function s:BufferPrototype._UpdateData()
 			let prevLen = len(getline('^', '$'))
 			if prevLen == 1 && empty(getline(1))
-				if !empty(self.lines)
-					call setline(1, self.lines[0])
+				if !empty(self._lines)
+					call setline(1, self._lines[0])
 				end
-			elseif prevLen > len(self.lines)
+			elseif prevLen > len(self._lines)
 				keepjumps normal ggdG
 				let prevLen = 1
-				if !empty(self.lines)
-					call setline(1, self.lines[0])
+				if !empty(self._lines)
+					call setline(1, self._lines[0])
 				end
 			end
-			call append('$', self.lines[prevLen : ])
+			call append('$', self._lines[prevLen : ])
 		endf
 
 		function s:BufferPrototype._Update()
@@ -110,7 +138,8 @@ function hide#Buffer#Buffer(bufInfo)
 	let self = copy(s:BufferPrototype)
 
 	let self.bufNum = bufnr(a:bufInfo.displayName, 1)
-	let self.lines = [ ]
+	let self._lines = [ ]
+	let self._focusedLine = ''
 	call extend(self, a:bufInfo)
 	call self._Init()
 
