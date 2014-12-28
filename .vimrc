@@ -8,6 +8,8 @@ if exists('g:load_hide_plugin') && g:load_hide_plugin == 1
 	let g:timer._handlers = {}
 	set updatetime=1000
 	set runtimepath+=./hide-vim
+	nmap <C-B> :HideBuildAll<CR>
+	nmap <C-F7> :HideBuildFile %<CR>
 end
 
 let g:cpp_plugin.indexer.builder.autoBuild = 1
