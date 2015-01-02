@@ -1,3 +1,4 @@
+*.pyc
 *.swo
 *.swp
 .ninja_deps

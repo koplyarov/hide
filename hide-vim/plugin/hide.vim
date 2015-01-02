@@ -1,7 +1,5 @@
 let s:plugin_path = escape(expand('<sfile>:p:h'), '\')
 
-exe 'pyfile '.fnameescape(s:plugin_path).'/hide-vim.py'
-
 "=================================================================
 
 let s:hideBufs = { }
@@ -136,9 +134,19 @@ endf
 autocmd CursorHold * call <SID>TimerTick()
 autocmd CursorHoldI * call <SID>TimerTickI()
 
-python import vim
-python import string
-python hidePlugin = HidePlugin()
+python import sys
+exe 'python sys.path.insert(0, "'.fnameescape(s:plugin_path).'")'
+
+python << endpython
+
+import vim
+import string
+
+import hide_vim
+
+hidePlugin = hide_vim.HidePlugin()
+
+endpython
 
 au VimLeavePre * python del hidePlugin
 au BufWritePre * if <SID>BuildInProgress() | throw s:BuildSystemException('Save prevented due to build in progress!') | end
