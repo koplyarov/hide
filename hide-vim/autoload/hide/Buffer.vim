@@ -19,47 +19,51 @@ function hide#Buffer#Buffer(bufInfo)
 				let b:hideBuffer = self
 				nmap <buffer> <CR> :call b:hideBuffer._EnterPressed()<CR>
 				nmap <buffer> <2-LeftMouse> :call b:hideBuffer._EnterPressed()<CR>
-				au BufWinEnter <buffer> call b:hideBuffer._SetHighlights()
-				au BufWinLeave <buffer> if exists('b:hideBuffer') | call b:hideBuffer._ResetHighlights() | end
+				au BufWinEnter <buffer> call b:hideBuffer._SetHighlightsInCurWindow()
+				au BufWinLeave <buffer> if exists('b:hideBuffer') | call b:hideBuffer._ResetHighlightsInCurWindow() | end
 			finally
 				execute 'keepjumps buffer '.prevBuf
 			endtry
 		endf
 
-		function s:BufferPrototype._SetHighlights()
-			call self._ResetHighlights()
+		function s:BufferPrototype._SetHighlightsInCurWindow()
+			call self._ResetHighlightsInCurWindow()
 			if !empty(self._focusedLine)
-				let self._focusedLineMatchId = matchadd('focusedLine', '\%'.(self._focusedLine + 1).'l')
+				let w:hideFocusedLineMatchId = matchadd('focusedLine', '\%'.(self._focusedLine + 1).'l')
 			end
 		endf
 
-		function s:BufferPrototype._ResetHighlights()
-			if has_key(self, '_focusedLineMatchId')
-				call matchdelete(self._focusedLineMatchId)
-				unlet self._focusedLineMatchId
+		function s:BufferPrototype._ResetHighlightsInCurWindow()
+			if exists('w:hideFocusedLineMatchId')
+				call matchdelete(w:hideFocusedLineMatchId)
+				unlet w:hideFocusedLineMatchId
 			end
 		endf
 
-		function s:BufferPrototype._UpdateHighlights()
-			call self._ForEachMyWindow(self._SetHighlights)
-		endf
-
-		function s:BufferPrototype._FocusLine(lineNum)
+		function s:BufferPrototype._SetFocus(lineNum)
 			let self._focusedLine = a:lineNum
-			call self._UpdateHighlights()
+			call self._ForEachMyWindow(self._SetHighlightsInCurWindow)
+		endf
+
+		function s:BufferPrototype._ResetFocus()
+			call self._ForEachMyWindow(self._ResetHighlightsInCurWindow)
+			let self._focusedLine = ''
 		endf
 
 		function s:BufferPrototype._EnterPressed()
 			let idx = line('.') - 1
 			let focus_cur_line = (has_key(self, 'Action')) && self.Action(idx)
-			call self._FocusLine(focus_cur_line ? idx : '')
+			call self._SetFocus(focus_cur_line ? idx : '')
 		endf
 
 		function s:BufferPrototype.Sync()
+			let prevLinesCount = len(self._lines)
+
 			exec 'python vim.command("let l:events = [" + str.join(",", map(lambda e: e.ToVimDictionary(), hidePlugin.'.self.modelName.'.GetEvents())) + "]")'
 			for e in events
 				if e.type == 'reset'
 					let self._lines = []
+					call self._ResetFocus()
 				elseif e.type == 'inserted'
 					for idx in range(e.begin, e.end - 1)
 						exec 'python vim.command("let l:row = ''" + hidePlugin.'.self.modelName.'.GetRow('.idx.').ToVimString() + "''")'
@@ -72,14 +76,14 @@ function hide#Buffer#Buffer(bufInfo)
 
 			if !empty(events)
 				try
-					call self._DoInBuffer(self._UpdateData)
+					call self._DoInBuffer(self._UpdateDataInCurBuffer)
 				finally
-					call self._ForEachMyWindow(self._ScrollDown)
+					call self._ForEachMyWindow(self._ScrollDownInCurWindow, prevLinesCount)
 				endtry
 			end
 		endf
 
-		function s:BufferPrototype._UpdateData()
+		function s:BufferPrototype._UpdateDataInCurBuffer()
 			setlocal noro
 			try
 				let prevLen = len(getline('^', '$'))
@@ -101,18 +105,20 @@ function hide#Buffer#Buffer(bufInfo)
 			endtry
 		endf
 
-		function s:BufferPrototype._ScrollDown()
-			keepjumps normal G
+		function s:BufferPrototype._ScrollDownInCurWindow(prevLinesCount)
+			if line('.') == a:prevLinesCount || a:prevLinesCount == 0
+				keepjumps normal G
+			end
 		endf
 
-		function s:BufferPrototype._DoInBuffer(func)
+		function s:BufferPrototype._DoInBuffer(func, ...)
 			let oldEventignore = &eventignore
 			let curWinView = winsaveview()
 			let prevBuf = bufnr('')
 			try
 				set eventignore=all
 				execute 'keepjumps buffer '.self.bufNum
-				call call(a:func, [], self)
+				call call(a:func, a:000, self)
 			finally
 				let &ei = oldEventignore
 				execute 'keepjumps buffer '.prevBuf
@@ -120,7 +126,7 @@ function hide#Buffer#Buffer(bufInfo)
 			endtry
 		endf
 
-		function s:BufferPrototype._ForEachMyWindow(func)
+		function s:BufferPrototype._ForEachMyWindow(func, ...)
 			let oldEventignore = &eventignore
 			let currentTab = tabpagenr()
 			try
@@ -131,7 +137,7 @@ function hide#Buffer#Buffer(bufInfo)
 						for j in range(1, winnr('$'))
 							exec j.'wincmd w'
 							if bufnr('') == self.bufNum
-								call call(a:func, [], self)
+								call call(a:func, a:000, self)
 							end
 						endfor
 					finally

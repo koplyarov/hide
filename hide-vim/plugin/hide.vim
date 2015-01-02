@@ -26,7 +26,7 @@ function s:GotoLocation(location)
 	let max_winnr = winnr('$')
 	for w in [ winnr() ] + range(max_winnr, 1, -1)
 		exec w.'wincmd w'
-		if !exists('b:hideBuffer')
+		if !exists('w:isHideWindow') && !exists('b:hideBuffer')
 			execute 'e '.a:location.filename
 			call setpos('.', [ bufnr(''), a:location.line, a:location.column, 0 ])
 			normal zz
@@ -41,6 +41,33 @@ function s:SyncEverything()
 	endfor
 endf
 
+function s:CreateHideWindow()
+	let curWin = winnr()
+	try
+		botright 10split
+		let w:isHideWindow = 1
+		return winnr()
+	finally
+		exec curWin.'wincmd w'
+	endtry
+endf
+
+function s:FindHideWindow()
+	let curWin = winnr()
+	try
+		let max_winnr = winnr('$')
+		for w in range(max_winnr, 1, -1)
+			exec w.'wincmd w'
+			if exists('w:isHideWindow')
+				return w
+			end
+		endfor
+	finally
+		exec curWin.'wincmd w'
+	endtry
+	return -1
+endf
+
 function s:OpenHideWindow(bufInfo, focus)
 	if !has_key(s:hideBufs, a:bufInfo.id)
 		let s:hideBufs[a:bufInfo.id] = hide#Buffer#Buffer(a:bufInfo)
@@ -51,12 +78,15 @@ function s:OpenHideWindow(bufInfo, focus)
 		let buf = s:hideBufs[a:bufInfo.id]
 		let windowNumber = bufwinnr(buf.bufNum)
 		if windowNumber == -1
-			botright 10split
-		else
-			exec windowNumber.'wincmd w'
+			let windowNumber = s:FindHideWindow()
+		end
+		if windowNumber == -1
+			let windowNumber = s:CreateHideWindow()
 		end
 
-		execute 'keepjumps buffer '.buf.bufNum
+		exec windowNumber.'wincmd w'
+		exec 'keepjumps buffer '.buf.bufNum
+
 		call buf.Sync()
 	finally
 		if !a:focus
