@@ -60,49 +60,63 @@ function hide#Buffer#Buffer(bufInfo)
 			let prevLinesCount = len(self._lines)
 
 			exec 'python vim.command("let l:events = [" + str.join(",", map(lambda e: e.ToVimDictionary(), hidePlugin.'.self.modelName.'.GetEvents())) + "]")'
-			for e in events
-				if e.type == 'reset'
-					let self._lines = []
-					call self._ResetFocus()
-				elseif e.type == 'inserted'
-					for idx in range(e.begin, e.end - 1)
-						exec 'python vim.command("let l:row = ''" + hidePlugin.'.self.modelName.'.GetRow('.idx.').ToVimString() + "''")'
-						call insert(self._lines, row, idx)
-					endfor
-				else
-					throw s:BufferViewException('Unknown ModelEvent type: "'.e.type.'"')
-				end
-			endfor
 
 			if !empty(events)
 				try
-					call self._DoInBuffer(self._UpdateDataInCurBuffer)
+					if !self.autoScroll
+						call self._ForEachMyWindow(self._SaveViewInCurWindow)
+					end
+					call self._DoInBuffer(self._UpdateDataInCurBuffer, events)
 				finally
-					call self._ForEachMyWindow(self._ScrollDownInCurWindow, prevLinesCount)
+					if self.autoScroll
+						call self._ForEachMyWindow(self._ScrollDownInCurWindow, prevLinesCount)
+					else
+						call self._ForEachMyWindow(self._RestoreViewInCurWindow)
+					end
 				endtry
 			end
 		endf
 
-		function s:BufferPrototype._UpdateDataInCurBuffer()
+		function s:BufferPrototype._UpdateDataInCurBuffer(events)
 			setlocal noro
+			let pos = getpos('.')
 			try
-				let prevLen = len(getline('^', '$'))
-				if prevLen == 1 && empty(getline(1))
-					if !empty(self._lines)
-						call setline(1, self._lines[0])
+				for e in a:events
+					if e.type == 'reset'
+						keepjumps normal ggdG
+						let self._lines = []
+						call self._ResetFocus()
+					elseif e.type == 'inserted'
+						if empty(self._lines) && e.index == 0
+							call setline(1, e.row)
+						else
+							call append(e.index, e.row)
+							if !empty(self._focusedLine) && e.index < self._focusedLine
+								call self._SetFocus(self._focusedLine + 1)
+							end
+						end
+						call insert(self._lines, e.row, e.index)
+					elseif e.type == 'removed'
+						call remove(self._lines, e.index)
+						execute 'keepjumps '.(e.index + 1).'d'
+					else
+						throw s:BufferViewException('Unknown ModelEvent type: "'.e.type.'"')
 					end
-				elseif prevLen > len(self._lines)
-					keepjumps normal ggdG
-					let prevLen = 1
-					if !empty(self._lines)
-						call setline(1, self._lines[0])
-					end
-				end
-				call append('$', self._lines[prevLen : ])
+				endfor
 			finally
+				keepjumps call setpos('.', pos)
 				setlocal ro
 				setlocal nomod
 			endtry
+		endf
+
+		function s:BufferPrototype._SaveViewInCurWindow()
+			let w:hideSavedWindowView = winsaveview()
+		endf
+
+		function s:BufferPrototype._RestoreViewInCurWindow()
+			call winrestview(w:hideSavedWindowView)
+			unlet w:hideSavedWindowView
 		endf
 
 		function s:BufferPrototype._ScrollDownInCurWindow(prevLinesCount)

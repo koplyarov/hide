@@ -11,6 +11,7 @@
 #include <hide/Buffer.h>
 #include <hide/IBuildSystem.h>
 #include <hide/ILanguagePlugin.h>
+#include <hide/Indexer.h>
 #include <hide/utils/NamedLogger.h>
 #include <hide/utils/Utils.h>
 
@@ -37,12 +38,14 @@ namespace hide
 		IBuildSystemPtr				_currentBuildSystem;
 		FilesVector					_files;
 		BuffersMap					_buffers;
+		IndexerPtr					_indexer;
 
 	public:
 		Project();
 		~Project();
 
 		IBuildSystemPtr GetBuildSystem();
+		IndexerPtr GetIndexer();
 
 		void AddBuffer(const BufferPtr& buffer);
 		void RemoveBuffer(const std::string& bufferName);

@@ -1,3 +1,5 @@
+from threading import RLock
+
 import hide
 
 from Utils import LocationAsVimDictionary
@@ -25,17 +27,21 @@ class BuildLogModelRow:
 
 
 class BuildProcessListener(hide.IBuildProcessListener):
-    def __init__(self, model, mutex):
+    def __init__(self, model):
         super(BuildProcessListener, self).__init__()
-        self.__mutex = mutex
+        self.__mutex = RLock()
         self.__model = model
-        self.finished = False
+        self.__finished = False
 
     def OnLine(self, line):
         self.__model.Append(BuildLogModelRow('buildLogMsg', line))
 
     def OnFinished(self, status):
         with self.__mutex:
-            self.finished = True
-            self.status = status
+            self.__finished = True
+            self.__status = status
             self.__model.Append(BuildLogModelRow('serviceMsg', 'BUILD ' + str(status).upper()))
+
+    def Finished(self):
+        with self.__mutex:
+            return self.__finished

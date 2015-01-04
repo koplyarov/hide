@@ -75,6 +75,15 @@ using namespace hide;
 %shared_ptr(hide::CMakeBuildConfig)
 %include <hide/buildsystems/cmake/CMakeBuildConfig.h>
 
+%feature("director") hide::IIndexQueryListener;
+%copyctor hide::IndexQueryEntry;
+%shared_ptr(hide::IIndexQueryListener)
+%shared_ptr(hide::IIndexQuery)
+%include <hide/IIndexQuery.h>
+
+%shared_ptr(hide::Indexer)
+%include <hide/Indexer.h>
+
 %shared_ptr(hide::Buffer)
 %include <hide/Buffer.h>
 

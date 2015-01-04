@@ -4,14 +4,16 @@ let s:plugin_path = escape(expand('<sfile>:p:h'), '\')
 
 let s:hideBufs = { }
 
-let s:logBufInfo = { 'id': 'log', 'displayName': 'HIDE log', 'filetype': 'hide-log', 'modelName': 'logModel' }
+let s:logBufInfo = { 'id': 'log', 'displayName': 'HIDE log', 'filetype': 'hide-log', 'modelName': 'logModel', 'autoScroll': 1 }
 
-let s:buildLogBufInfo = { 'id': 'buildLog', 'displayName': 'HIDE build log', 'filetype': 'hide-build-log', 'modelName': 'buildLogModel' }
+let s:buildLogBufInfo = { 'id': 'buildLog', 'displayName': 'HIDE build log', 'filetype': 'hide-build-log', 'modelName': 'buildLogModel', 'autoScroll': 1 }
 function s:buildLogBufInfo.Action(idx)
 	exec 'python vim.command("let l:location = " + hidePlugin.buildLogModel.GetRow('.a:idx.').GetLocationAsVimDictionary())'
 	call s:GotoLocation(location)
 	return !empty(location)
 endf
+
+let s:indexQueryBufInfo = { 'id': 'indexQuery', 'displayName': 'HIDE index query', 'filetype': 'hide-index-query', 'modelName': 'indexQueryModel', 'autoScroll': 0 }
 
 
 "=================================================================
@@ -108,6 +110,10 @@ function s:BuildSystemException(msg)
 	return "HIDE.BuildSystemException: ".a:msg
 endf
 
+function s:IndexQueryException(msg)
+	return "HIDE.IndexQueryException: ".a:msg
+endf
+
 function s:DoBuild(methodCall)
 	exec 'python vim.command("let l:res = " + ("1" if hidePlugin.'.a:methodCall.' else "0"))'
 	if !res
@@ -129,6 +135,15 @@ endf
 
 function s:BuildInProgress()
 	exec 'python vim.command("return " + ("1" if hidePlugin.BuildInProgress() else "0"))'
+endf
+
+function s:DoStartQueryIndex(methodCall)
+	exec 'python vim.command("let l:res = " + ("1" if hidePlugin.'.a:methodCall.' else "0"))'
+	if !res
+		throw s:IndexQueryException('Another index query already in progress!')
+	end
+	call s:SyncEverything()
+	call s:OpenHideWindow(s:indexQueryBufInfo, 0)
 endf
 
 autocmd CursorHold * call <SID>TimerTick()
@@ -160,6 +175,7 @@ command! -nargs=0 HideBuildAll call <SID>DoBuild('BuildAll()')
 command! -nargs=0 HideStopBuild call <SID>StopBuild()
 command! -nargs=? -complete=custom,<SID>GetBuildTargets HideBuild call <SID>DoBuild('BuildTarget("<args>")')
 command! -nargs=? -complete=file HideBuildFile call <SID>DoBuild('BuildFile("<args>")')
+command! -nargs=1 HideIndexQuery call <SID>DoStartQueryIndex('QuerySymbolsBySubstring("<args>")')
 
 
 au CursorMoved,CursorMovedI,CmdWinEnter,CmdWinLeave * call <SID>SyncEverything()

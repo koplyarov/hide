@@ -13,7 +13,8 @@ namespace hide
 
 	Project::Project()
 		:	_buildSystemProbers{ std::make_shared<CMakeBuildSystemProber>() },
-			_langPlugins{ std::make_shared<cpp::LanguagePlugin>() }
+			_langPlugins{ std::make_shared<cpp::LanguagePlugin>() },
+			_indexer(new Indexer)
 	{
 		s_logger.Info() << "Created";
 	}
@@ -36,6 +37,12 @@ namespace hide
 			}
 
 		return _currentBuildSystem;
+	}
+
+
+	IndexerPtr Project::GetIndexer()
+	{
+		return _indexer;
 	}
 
 

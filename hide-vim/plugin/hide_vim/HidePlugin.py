@@ -2,19 +2,19 @@ from threading import RLock
 
 import hide
 
-from BuildProcessListener import BuildProcessListener
-from BuildProcessListener import BuildLogModelRow
-from LoggerSink import LoggerSink
-from Model import Model
+from BuildProcessListener import *
+from IndexQueryListener import *
+from LoggerSink import *
+from Model import *
 
 
 class HidePlugin:
     def __init__(self):
         hide.SetCurrentThreadName('vim')
 
-        self.__mutex = RLock()
-        self.logModel = Model(self.__mutex)
-        self.buildLogModel = Model(self.__mutex)
+        self.logModel = Model()
+        self.buildLogModel = Model()
+        self.indexQueryModel = Model()
 
         self.loggerSink = LoggerSink(self.logModel)
         hide.Logger.AddSink(self.loggerSink)
@@ -24,6 +24,9 @@ class HidePlugin:
 
         self.__buildProcess = None
         self.__buildProcessListener = None
+
+        self.__indexQuery = None
+        self.__indexQueryListener = None
 
         self.project = hide.Project.CreateAuto(['.*\\bCMakeFiles\\b.*', '.*\\.git\\b.*'])
 
@@ -35,25 +38,22 @@ class HidePlugin:
         return self.project.GetBuildSystem().GetTargets()
 
     def BuildInProgress(self):
-        with self.__mutex:
-            return self.__buildProcessListener != None and not self.__buildProcessListener.finished
+        return self.__buildProcessListener != None and not self.__buildProcessListener.Finished()
 
     def InterruptBuild(self):
-        with self.__mutex:
-            if not self.BuildInProgress():
-                return
+        if not self.BuildInProgress():
+            return
         if not self.__buildProcess is None:
             self.__buildProcess.Interrupt()
 
     def __DoBuild(self, targetName, buildFunc):
-        with self.__mutex:
-            if self.BuildInProgress():
+        if self.BuildInProgress():
                 return False
-            self.buildLogModel.Clear()
-            self.buildLogModel.Append(BuildLogModelRow('serviceMsg', 'Building "' + targetName + '":'))
+        self.buildLogModel.Clear()
+        self.buildLogModel.Append(BuildLogModelRow('serviceMsg', 'Building "' + targetName + '":'))
         self.__buildProcess = None
         self.__buildProcess = buildFunc(self.project.GetBuildSystem())
-        self.__buildProcessListener = BuildProcessListener(self.buildLogModel, self.__mutex)
+        self.__buildProcessListener = BuildProcessListener(self.buildLogModel)
         self.__buildProcess.AddListener(self.__buildProcessListener)
         return True
 
@@ -65,3 +65,21 @@ class HidePlugin:
 
     def BuildFile(self, filename):
         return self.__DoBuild(filename, lambda bs: bs.BuildFile(self.project.GetFileByPath(filename)))
+
+    def IndexQueryInProgress(self):
+        return self.__indexQueryListener != None and not self.__indexQueryListener.Finished()
+
+    def __DoStartIndexQuery(self, queryFunc):
+        if self.IndexQueryInProgress():
+            return False
+        self.indexQueryModel.Clear()
+        self.indexQueryModel.Append(IndexQueryModelRow('serviceMsg', 'Searching...'))
+        self.__indexQuery = None
+        self.__indexQuery = queryFunc(self.project.GetIndexer())
+        self.__indexQueryListener = IndexQueryListener(self.indexQueryModel)
+        self.__indexQuery.AddListener(self.__indexQueryListener)
+        self.__indexQueryListener.WaitForFinished(0.2)
+        return True
+
+    def QuerySymbolsBySubstring(self, substring):
+        return self.__DoStartIndexQuery(lambda indexer: indexer.QuerySymbolsBySubstring(substring))
