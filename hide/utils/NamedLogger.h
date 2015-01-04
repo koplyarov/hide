@@ -35,7 +35,7 @@ namespace hide
 				{ }
 
 				~Impl()
-				{ Logger::Log(LoggerMessage(GetCurrentThreadName(), _namedLogger->_name, _logLevel, _stringBuilder)); }
+				{ _namedLogger->Log(_logLevel, _stringBuilder); }
 			};
 			HIDE_DECLARE_PTR(Impl);
 
@@ -65,6 +65,9 @@ namespace hide
 		NamedLogger(const std::string& name)
 			: _name(name)
 		{ }
+
+		void Log(LogLevel logLevel, const std::string& text) const
+		{ Logger::Log(LoggerMessage(GetCurrentThreadName(), _name, logLevel, text)); }
 
 		StreamAccessProxy Debug() const		{ return StreamAccessProxy(this, LogLevel::Debug); }
 		StreamAccessProxy Info() const		{ return StreamAccessProxy(this, LogLevel::Info); }

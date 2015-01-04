@@ -20,6 +20,8 @@ class HidePlugin:
         hide.Logger.AddSink(self.loggerSink)
         hide.Logger.SetLogLevel(hide.LogLevel.Debug)
 
+        self.logger = hide.NamedLogger('HideVimPlugin')
+
         self.__buildProcess = None
         self.__buildProcessListener = None
 

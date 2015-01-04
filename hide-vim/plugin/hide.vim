@@ -143,6 +143,7 @@ import vim
 import string
 
 import hide_vim
+import hide
 
 hidePlugin = hide_vim.HidePlugin()
 

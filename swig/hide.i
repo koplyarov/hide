@@ -44,6 +44,14 @@ using namespace hide;
 
 %include <hide/utils/Logger.h>
 
+%warnfilter(325) hide::NamedLogger::StreamAccessProxy;
+%ignore hide::NamedLogger::StreamAccessProxy;
+%ignore hide::NamedLogger::Debug() const;
+%ignore hide::NamedLogger::Info() const;
+%ignore hide::NamedLogger::Warning() const;
+%ignore hide::NamedLogger::Error() const;
+%include <hide/utils/NamedLogger.h>
+
 %include <hide/Location.h>
 
 %shared_ptr(hide::BuildIssue)
