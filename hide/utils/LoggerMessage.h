@@ -28,6 +28,7 @@ namespace hide
 			case LogLevel::Info:	return "Info";
 			case LogLevel::Warning:	return "Warning";
 			case LogLevel::Error:	return "Error";
+			default:				BOOST_THROW_EXCEPTION(std::runtime_error(StringBuilder() % "Unknown LogLevel value: " % _val));
 			}
 		}
 

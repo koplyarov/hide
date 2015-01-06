@@ -45,7 +45,7 @@ namespace hide
 			virtual ByteArray Read(int64_t ofs) const
 			{
 				HIDE_LOCK(GetMutex());
-				if (ofs > _data.size())
+				if (ofs > (int64_t)_data.size())
 					BOOST_THROW_EXCEPTION(std::runtime_error("Invalid offset!"));
 				ByteArray result;
 				int64_t result_size = _data.size() - ofs;

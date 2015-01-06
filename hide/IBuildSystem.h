@@ -33,6 +33,7 @@ namespace hide
 			case BuildStatus::Succeeded:	return "Succeeded";
 			case BuildStatus::Failed:		return "Failed";
 			case BuildStatus::Interrupted:	return "Interrupted";
+			default:						BOOST_THROW_EXCEPTION(std::runtime_error(StringBuilder() % "Unknown BuildStatus value: " % _val));
 			}
 		}
 

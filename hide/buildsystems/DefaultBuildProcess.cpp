@@ -27,7 +27,7 @@ namespace hide
 
 
 	DefaultBuildProcess::DefaultBuildProcess(const std::string& executable, const StringArray& parameters)
-		: _stdoutClosed(false), _interrupted(false)
+		: _interrupted(false), _stdoutClosed(false)
 	{
 		_executable = std::make_shared<Executable>(executable, parameters);
 		_executable->GetStdout()->AddListener(std::make_shared<ReadBufferLinesListener>(

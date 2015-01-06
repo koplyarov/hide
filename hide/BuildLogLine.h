@@ -27,6 +27,7 @@ namespace hide
 			case BuildIssueType::Note:		return "Note";
 			case BuildIssueType::Warning:	return "Warning";
 			case BuildIssueType::Error:		return "Error";
+			default:						BOOST_THROW_EXCEPTION(std::runtime_error(StringBuilder() % "Unknown BuildIssueType value: " % _val));
 			}
 		}
 

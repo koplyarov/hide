@@ -26,6 +26,7 @@ include_directories(${LibClang_INCLUDE_DIRS})
 include_directories(${CMAKE_SOURCE_DIR})
 
 add_definitions(-std=c++11)
+add_definitions(-Wall)
 
 add_definitions(-DHIDE_PLATFORM_POSIX=1) # TODO: implement platform detection
 
