@@ -37,6 +37,7 @@ namespace hide
 		~Indexer();
 
 		IIndexQueryPtr QuerySymbolsBySubstring(const std::string& str);
+		IIndexQueryPtr QuerySymbolsByName(const std::string& symbolName);
 
 	private:
 		void OnFileAdded(const IFilePtr& file);

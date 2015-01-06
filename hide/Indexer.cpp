@@ -42,18 +42,19 @@ namespace hide
 
 	class TestIndexQuery : public ListenersHolder<IIndexQueryListener, IIndexQuery>
 	{
-		typedef std::vector<IndexQueryEntry>		Entries;
+		typedef std::vector<IndexQueryEntry>					Entries;
+		typedef std::function<bool(const IIndexEntryPtr&)>		CheckEntryFunc;
 
 	private:
 		const Indexer*	_indexer;
-		std::string		_substring;
+		CheckEntryFunc	_checkEntryFunc;
 		std::thread		_thread;
 		Entries			_entries;
 		bool			_finished;
 
 	public:
-		TestIndexQuery(const Indexer* indexer, const std::string& substring)
-			: _indexer(indexer), _substring(substring), _finished(false)
+		TestIndexQuery(const Indexer* indexer, const CheckEntryFunc& checkEntryFunc)
+			: _indexer(indexer), _checkEntryFunc(checkEntryFunc), _finished(false)
 		{
 			_thread = std::thread(std::bind(&TestIndexQuery::ThreadFunc, this));
 		}
@@ -95,7 +96,7 @@ namespace hide
 			HIDE_LOCK(_indexer->_mutex);
 			for (auto pi : _indexer->_partialIndexes)
 				for (auto e : pi.second->GetEntries())
-					if (e->GetName().find(_substring) != std::string::npos)
+					if (_checkEntryFunc(e))
 						ReportEntry(IndexQueryEntry(e->GetFullName(), e->GetLocation()));
 			ReportFinished();
 		}
@@ -104,7 +105,12 @@ namespace hide
 
 	IIndexQueryPtr Indexer::QuerySymbolsBySubstring(const std::string& str)
 	{
-		return std::make_shared<TestIndexQuery>(this, str); // TODO: use ImplPtr
+		return std::make_shared<TestIndexQuery>(this, [str](const IIndexEntryPtr& e) { return e->GetName().find(str) != std::string::npos; }); // TODO: use ImplPtr
+	}
+
+	IIndexQueryPtr Indexer::QuerySymbolsByName(const std::string& symbolName)
+	{
+		return std::make_shared<TestIndexQuery>(this, [symbolName](const IIndexEntryPtr& e) { return e->GetName() == symbolName; }); // TODO: use ImplPtr
 	}
 
 

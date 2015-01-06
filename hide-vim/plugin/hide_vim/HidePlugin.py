@@ -82,3 +82,6 @@ class HidePlugin:
 
     def QuerySymbolsBySubstring(self, substring):
         return self.__DoStartIndexQuery(lambda indexer: indexer.QuerySymbolsBySubstring(substring))
+
+    def QuerySymbolsByName(self, symbolName):
+        return self.__DoStartIndexQuery(lambda indexer: indexer.QuerySymbolsByName(symbolName))

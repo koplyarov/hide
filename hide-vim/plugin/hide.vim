@@ -168,7 +168,7 @@ command! -nargs=0 HideBuildAll call <SID>DoBuild('BuildAll()')
 command! -nargs=0 HideStopBuild call <SID>StopBuild()
 command! -nargs=? -complete=custom,<SID>GetBuildTargets HideBuild call <SID>DoBuild('BuildTarget("<args>")')
 command! -nargs=? -complete=file HideBuildFile call <SID>DoBuild('BuildFile("<args>")')
-command! -nargs=1 HideIndexQuery call <SID>DoStartQueryIndex('QuerySymbolsBySubstring("<args>")')
+command! -nargs=1 HideIndexQuery call <SID>DoStartQueryIndex('QuerySymbolsByName("<args>")')
 
 
 au CursorMoved,CursorMovedI,CmdWinEnter,CmdWinLeave * call <SID>SyncEverything()
