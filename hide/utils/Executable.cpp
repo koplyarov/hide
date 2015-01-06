@@ -170,7 +170,7 @@ namespace hide
 #else
 #	error Executable::Executable is not implemented
 #endif
-		s_logger.Debug() << "Created";
+		s_logger.Debug() << "Created, executable: " << executable << ", parameters: " << parameters;
 	}
 
 
