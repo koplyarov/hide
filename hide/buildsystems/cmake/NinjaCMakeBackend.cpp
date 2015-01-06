@@ -1,6 +1,7 @@
 #include <hide/buildsystems/cmake/NinjaCMakeBackend.h>
 
 #include <fstream>
+#include <future>
 
 #include <boost/filesystem.hpp>
 #include <boost/regex.hpp>
@@ -42,6 +43,7 @@ namespace hide
 			regex re("^([^:]+):.*$");
 
 			ExecutablePtr ninja = std::make_shared<Executable>("ninja", params);
+			std::promise<void> stdout_closed;
 			ninja->GetStdout()->AddListener(std::make_shared<ReadBufferLinesListener>(
 					[&](const std::string& s)
 					{
@@ -49,8 +51,9 @@ namespace hide
 						if (regex_match(s, m, re))
 							result.push_back(m[1]);
 					},
-					[]() { }
+					[&]() { stdout_closed.set_value(); }
 				));
+			stdout_closed.get_future().wait();
 			ninja.reset();
 
 			return result;
