@@ -123,7 +123,13 @@ function s:DoStartQueryIndex(methodCall)
 		throw s:IndexQueryException('Another index query already in progress!')
 	end
 	call s:SyncEverything()
-	call s:OpenHideWindow(s:indexQueryBufInfo, 1)
+	exec 'python vim.command("let l:finished = " + ("0" if hidePlugin.IndexQueryInProgress() else "1"))'
+	exec 'python vim.command("let l:matchesCount = " + str(hidePlugin.indexQueryModel.GetCount()))'
+	if finished && matchesCount == 1
+		call s:indexQueryBufInfo.Action(0)
+	else
+		call s:OpenHideWindow(s:indexQueryBufInfo, 1)
+	end
 endf
 
 function s:SetLogLevel(logLevel)

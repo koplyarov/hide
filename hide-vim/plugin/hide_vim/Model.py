@@ -50,3 +50,7 @@ class Model:
     def GetRow(self, idx):
         with self.__mutex:
             return self.__rows[idx]
+
+    def GetCount(self):
+        with self.__mutex:
+            return len(self.__rows)
