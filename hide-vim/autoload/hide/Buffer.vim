@@ -28,7 +28,7 @@ function hide#Buffer#Buffer(bufInfo)
 
 		function s:BufferPrototype._SetHighlightsInCurWindow()
 			call self._ResetHighlightsInCurWindow()
-			if !empty(self._focusedLine)
+			if !hide#Utils#IsNull(self._focusedLine)
 				let w:hideFocusedLineMatchId = matchadd('focusedLine', '\%'.(self._focusedLine + 1).'l')
 			end
 		endf
@@ -47,7 +47,7 @@ function hide#Buffer#Buffer(bufInfo)
 
 		function s:BufferPrototype._ResetFocus()
 			call self._ForEachMyWindow(self._ResetHighlightsInCurWindow)
-			let self._focusedLine = ''
+			let self._focusedLine = g:hide#Utils#null
 		endf
 
 		function s:BufferPrototype._EnterPressed()
@@ -91,7 +91,7 @@ function hide#Buffer#Buffer(bufInfo)
 							call setline(1, e.row)
 						else
 							call append(e.index, e.row)
-							if !empty(self._focusedLine) && e.index < self._focusedLine
+							if !hide#Utils#IsNull(self._focusedLine) && e.index < self._focusedLine
 								call self._SetFocus(self._focusedLine + 1)
 							end
 						end
@@ -169,7 +169,7 @@ function hide#Buffer#Buffer(bufInfo)
 
 	let self.bufNum = bufnr(a:bufInfo.displayName, 1)
 	let self._lines = [ ]
-	let self._focusedLine = ''
+	let self._focusedLine = g:hide#Utils#null
 	call extend(self, a:bufInfo)
 	call self._Init()
 
