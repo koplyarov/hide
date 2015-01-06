@@ -43,6 +43,7 @@ set(hide_SRCS
 	hide/lang_plugins/cpp/LanguagePlugin.cpp
 	hide/lang_plugins/cpp/clang/Index.cpp
 	hide/utils/Executable.cpp
+	hide/utils/FileSystemUtils.cpp
 	hide/utils/Logger.cpp
 	hide/utils/LoggerMessage.cpp
 	hide/utils/ReadBufferLinesListener.cpp
