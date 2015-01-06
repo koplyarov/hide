@@ -10,6 +10,10 @@ if exists('g:load_hide_plugin') && g:load_hide_plugin == 1
 	set runtimepath+=./hide-vim
 	nmap <C-B> :HideBuildAll<CR>
 	nmap <C-F7> :HideBuildFile %<CR>
+	nmap <C-LeftMouse> <LeftMouse>:HideIndexQuery <C-R>=expand('<cword>')<CR><CR>
+	nmap g<C-LeftMouse> <LeftMouse>:HideIndexQuery <C-R>=expand('<cword>')<CR><CR>
+	nmap <C-]> :HideIndexQuery <C-R>=expand('<cword>')<CR><CR>
+	nmap g<C-]> :HideIndexQuery <C-R>=expand('<cword>')<CR><CR>
 end
 
 let g:cpp_plugin.indexer.builder.autoBuild = 1
