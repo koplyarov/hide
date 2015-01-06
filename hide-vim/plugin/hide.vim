@@ -2,43 +2,29 @@ let s:plugin_path = escape(expand('<sfile>:p:h'), '\')
 
 "=================================================================
 
+function s:LocalFunc(funcName)
+	let sid = matchstr(expand('<sfile>'), '<SNR>\zs\d\+\ze_LocalFunc$')
+	return function('<SNR>'.sid.'_'.a:funcName)
+endf
+
+function s:GotoLocationAction(idx) dict
+	exec 'python vim.command("let l:location = " + hidePlugin.'.self.modelName.'.GetRow('.a:idx.').GetLocationAsVimDictionary())'
+	call hide#Utils#GotoLocation(location)
+	return !empty(location)
+endf
+
+"=================================================================
+
 let s:hideBufs = { }
 
 let s:logBufInfo = { 'id': 'log', 'displayName': 'HIDE log', 'filetype': 'hide-log', 'modelName': 'logModel', 'autoScroll': 1 }
 
-let s:buildLogBufInfo = { 'id': 'buildLog', 'displayName': 'HIDE build log', 'filetype': 'hide-build-log', 'modelName': 'buildLogModel', 'autoScroll': 1 }
-function s:buildLogBufInfo.Action(idx)
-	exec 'python vim.command("let l:location = " + hidePlugin.buildLogModel.GetRow('.a:idx.').GetLocationAsVimDictionary())'
-	call s:GotoLocation(location)
-	return !empty(location)
-endf
+let s:buildLogBufInfo = { 'id': 'buildLog', 'displayName': 'HIDE build log', 'filetype': 'hide-build-log', 'modelName': 'buildLogModel', 'Action': s:LocalFunc('GotoLocationAction'), 'autoScroll': 1 }
 
-let s:indexQueryBufInfo = { 'id': 'indexQuery', 'displayName': 'HIDE index query', 'filetype': 'hide-index-query', 'modelName': 'indexQueryModel', 'autoScroll': 0 }
-function s:indexQueryBufInfo.Action(idx)
-	exec 'python vim.command("let l:location = " + hidePlugin.indexQueryModel.GetRow('.a:idx.').GetLocationAsVimDictionary())'
-	call s:GotoLocation(location)
-	return !empty(location)
-endf
+let s:indexQueryBufInfo = { 'id': 'indexQuery', 'displayName': 'HIDE index query', 'filetype': 'hide-index-query', 'modelName': 'indexQueryModel', 'Action': s:LocalFunc('GotoLocationAction'), 'autoScroll': 0 }
 
 
 "=================================================================
-
-function s:GotoLocation(location)
-	if empty(a:location)
-		return
-	end
-
-	let max_winnr = winnr('$')
-	for w in [ winnr() ] + range(max_winnr, 1, -1)
-		exec w.'wincmd w'
-		if !exists('w:isHideWindow') && !exists('b:hideBuffer')
-			execute 'e '.a:location.filename
-			call setpos('.', [ bufnr(''), a:location.line, a:location.column, 0 ])
-			normal zz
-			break
-		end
-	endfor
-endf
 
 function s:SyncEverything()
 	for bufId in keys(s:hideBufs)
@@ -100,17 +86,6 @@ function s:OpenHideWindow(bufInfo, focus)
 	endtry
 endf
 
-function s:TimerTick()
-	call s:SyncEverything()
-	call feedkeys("f\e")
-endf
-
-function s:TimerTickI()
-	call s:SyncEverything()
-	let noop_keys = (col('$') > 1) ? (col('.') == 1 ? "\<Right>\<Left>" : "\<Left>\<Right>") : "\ei"
-	call feedkeys(noop_keys, 'n')
-endf
-
 function s:BuildSystemException(msg)
 	return "HIDE.BuildSystemException: ".a:msg
 endf
@@ -159,9 +134,6 @@ function s:GetLogLevels(A, L, P)
 	return join([ 'Debug', 'Info', 'Warning', 'Error' ], "\n")
 endf
 
-autocmd CursorHold * call <SID>TimerTick()
-autocmd CursorHoldI * call <SID>TimerTickI()
-
 python import sys
 exe 'python sys.path.insert(0, "'.fnameescape(s:plugin_path).'")'
 
@@ -181,6 +153,7 @@ au VimLeavePre * python del hidePlugin
 au BufWritePre * if <SID>BuildInProgress() | throw s:BuildSystemException('Save prevented due to build in progress!') | end
 
 call s:SyncEverything()
+call hide#Utils#AddTimer(s:LocalFunc('SyncEverything'))
 
 command! -nargs=1 -complete=custom,<SID>GetLogLevels HideLogLevel call <SID>SetLogLevel('<args>')
 command! -nargs=0 HideLog call <SID>OpenHideWindow(s:logBufInfo, 0)
