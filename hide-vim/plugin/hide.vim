@@ -146,6 +146,14 @@ function s:DoStartQueryIndex(methodCall)
 	call s:OpenHideWindow(s:indexQueryBufInfo, 0)
 endf
 
+function s:SetLogLevel(logLevel)
+	execute 'python hide.Logger.SetLogLevel(hide.LogLevel.'.a:logLevel.')'
+endf
+
+function s:GetLogLevels(A, L, P)
+	return join([ 'Debug', 'Info', 'Warning', 'Error' ], "\n")
+endf
+
 autocmd CursorHold * call <SID>TimerTick()
 autocmd CursorHoldI * call <SID>TimerTickI()
 
@@ -169,6 +177,7 @@ au BufWritePre * if <SID>BuildInProgress() | throw s:BuildSystemException('Save 
 
 call s:SyncEverything()
 
+command! -nargs=1 -complete=custom,<SID>GetLogLevels HideLogLevel call <SID>SetLogLevel('<args>')
 command! -nargs=0 HideLog call <SID>OpenHideWindow(s:logBufInfo, 0)
 command! -nargs=0 HideBuildLog call <SID>OpenHideWindow(s:buildLogBufInfo, 0)
 command! -nargs=0 HideBuildAll call <SID>DoBuild('BuildAll()')

@@ -18,7 +18,6 @@ class HidePlugin:
 
         self.loggerSink = LoggerSink(self.logModel)
         hide.Logger.AddSink(self.loggerSink)
-        hide.Logger.SetLogLevel(hide.LogLevel.Debug)
 
         self.logger = hide.NamedLogger('HideVimPlugin')
 
