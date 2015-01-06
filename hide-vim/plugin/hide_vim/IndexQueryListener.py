@@ -13,7 +13,7 @@ class IndexQueryModelRow:
         if self.__type == 'serviceMsg':
             return self.__entry
         else:
-            return self.__entry.GetName()
+            return self.__entry.GetName() + " (" + self.__entry.GetLocation().GetFilename() + ")"
 
     def GetLocationAsVimDictionary(self):
         if self.__type == 'queryEntry':

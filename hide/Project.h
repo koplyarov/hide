@@ -12,6 +12,7 @@
 #include <hide/IBuildSystem.h>
 #include <hide/ILanguagePlugin.h>
 #include <hide/Indexer.h>
+#include <hide/ProjectFiles.h>
 #include <hide/utils/NamedLogger.h>
 #include <hide/utils/Utils.h>
 
@@ -36,7 +37,8 @@ namespace hide
 		IBuildSystemProberPtrArray	_buildSystemProbers;
 		ILanguagePluginPtrArray		_langPlugins;
 		IBuildSystemPtr				_currentBuildSystem;
-		FilesVector					_files;
+		ProjectFilesPtr				_files;
+
 		BuffersMap					_buffers;
 		IndexerPtr					_indexer;
 
@@ -51,7 +53,7 @@ namespace hide
 		void RemoveBuffer(const std::string& bufferName);
 
 		IFilePtr GetFileByPath(const std::string& filepath);
-		FilesVector GetFiles() const { return _files; }
+		FilesVector GetFiles() const { return _files->GetFiles(); }
 
 		static ProjectPtr CreateAuto(const StringArray& skipRegexesList);
 

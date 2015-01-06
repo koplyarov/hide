@@ -14,6 +14,11 @@ function s:buildLogBufInfo.Action(idx)
 endf
 
 let s:indexQueryBufInfo = { 'id': 'indexQuery', 'displayName': 'HIDE index query', 'filetype': 'hide-index-query', 'modelName': 'indexQueryModel', 'autoScroll': 0 }
+function s:indexQueryBufInfo.Action(idx)
+	exec 'python vim.command("let l:location = " + hidePlugin.indexQueryModel.GetRow('.a:idx.').GetLocationAsVimDictionary())'
+	call s:GotoLocation(location)
+	return !empty(location)
+endf
 
 
 "=================================================================
@@ -143,7 +148,7 @@ function s:DoStartQueryIndex(methodCall)
 		throw s:IndexQueryException('Another index query already in progress!')
 	end
 	call s:SyncEverything()
-	call s:OpenHideWindow(s:indexQueryBufInfo, 0)
+	call s:OpenHideWindow(s:indexQueryBufInfo, 1)
 endf
 
 function s:SetLogLevel(logLevel)

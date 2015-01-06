@@ -9,7 +9,7 @@ namespace hide {
 namespace cpp
 {
 
-	class File : public IFile
+	class File : public virtual IFile
 	{
 	private:
 		std::string		_filename;
@@ -18,6 +18,10 @@ namespace cpp
 		File(const std::string& filename);
 
 		virtual std::string GetFilename() const { return _filename; }
+
+		virtual IIndexableIdPtr GetIndexableId();
+		virtual Time GetModificationTime();
+		virtual IPartialIndexerPtr GetIndexer();
 	};
 
 }}

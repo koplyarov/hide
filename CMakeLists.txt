@@ -36,10 +36,12 @@ set(hide_SRCS
 	hide/Buffer.cpp
 	hide/Indexer.cpp
 	hide/Project.cpp
+	hide/ProjectFiles.cpp
 	hide/buildsystems/BuildProcessBase.cpp
 	hide/buildsystems/DefaultBuildProcess.cpp
 	hide/buildsystems/cmake/CMakeBuildSystem.cpp
 	hide/buildsystems/cmake/NinjaCMakeBackend.cpp
+	hide/lang_plugins/GenericCTagsIndexer.cpp
 	hide/lang_plugins/cpp/File.cpp
 	hide/lang_plugins/cpp/LanguagePlugin.cpp
 	hide/lang_plugins/cpp/clang/Index.cpp

@@ -14,7 +14,8 @@ namespace hide
 	Project::Project()
 		:	_buildSystemProbers{ std::make_shared<CMakeBuildSystemProber>() },
 			_langPlugins{ std::make_shared<cpp::LanguagePlugin>() },
-			_indexer(new Indexer)
+			_files(new ProjectFiles),
+			_indexer(new Indexer(_files))
 	{
 		s_logger.Info() << "Created";
 	}
@@ -64,7 +65,7 @@ namespace hide
 	{
 		using namespace boost::filesystem;
 
-		for (auto f : _files)
+		for (auto f : GetFiles())
 			if (equivalent(f->GetFilename(), filepath))
 				return f;
 		return nullptr;
@@ -99,7 +100,7 @@ namespace hide
 
 			if (f)
 			{
-				_files.push_back(f);
+				_files->AddFile(f);
 				break;
 			}
 		}

@@ -58,6 +58,17 @@ using namespace hide;
 %copyctor hide::BuildLogLine;
 %include <hide/BuildLogLine.h>
 
+%feature("director") hide::IComparable;
+%shared_ptr(hide::IComparable)
+%include <hide/utils/IComparable.h>
+
+%feature("director") hide::IIndexableId;
+%shared_ptr(hide::IIndexableId)
+%feature("director") hide::IIndexable;
+%shared_ptr(hide::IIndexable)
+%include <hide/IIndexable.h>
+
+%feature("director") hide::IFile;
 %shared_ptr(hide::IFile)
 %include <hide/IFile.h>
 

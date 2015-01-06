@@ -2,13 +2,14 @@
 #define HIDE_IFILE_H
 
 
+#include <hide/IIndexable.h>
 #include <hide/utils/Utils.h>
 
 
 namespace hide
 {
 
-	struct IFile
+	struct IFile : public virtual IIndexable
 	{
 		virtual ~IFile() { }
 
