@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+#include <chrono>
 #include <map>
 #include <memory>
 #include <stdexcept>
@@ -20,6 +21,8 @@ namespace hide
 #define HIDE_DECLARE_MAP(K_, V_) typedef std::map<K_, V_>	K_##To##V_##Map
 #define HIDE_CHECK(Expr_, Exception_) do { if (!(Expr_)) BOOST_THROW_EXCEPTION(Exception_); } while (false)
 #define HIDE_LOCK(Mutex_)	std::lock_guard<decltype(Mutex_)> BOOST_PP_CAT(lock, __LINE__)(Mutex_);
+
+	typedef std::chrono::system_clock::time_point	Time;
 
 	typedef std::string String;
 	HIDE_DECLARE_ARRAY(String);
