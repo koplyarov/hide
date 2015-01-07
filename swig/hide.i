@@ -30,6 +30,7 @@ using namespace hide;
 %ignore operator Enum;
 
 %include <hide/utils/Utils.h>
+%include <hide/utils/MembersVisitor.h>
 
 %ignore hide::MakeThread;
 %include <hide/utils/Thread.h>

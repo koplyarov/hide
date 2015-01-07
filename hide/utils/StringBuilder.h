@@ -20,11 +20,12 @@ namespace hide
 	{
 		struct ObjectType
 		{
-			HIDE_ENUM_VALUES(HasToString, Collection, Other);
+			HIDE_ENUM_VALUES(HasToString, HasVisitMembers, Collection, Other);
 			HIDE_ENUM_CLASS(ObjectType);
 		};
 
 		HIDE_DECLARE_METHOD_CHECK(ToString);
+		HIDE_DECLARE_METHOD_CHECK(VisitMembers);
 		HIDE_DECLARE_METHOD_CHECK(begin);
 		HIDE_DECLARE_METHOD_CHECK(end);
 
@@ -33,8 +34,9 @@ namespace hide
 		{
 			static const ObjectType::Enum Value =
 				HasMethod_ToString<T>::Value ? ObjectType::HasToString :
-					(HasMethod_begin<T>::Value && HasMethod_end<T>::Value ? ObjectType::Collection :
-						ObjectType::Other);
+					(HasMethod_VisitMembers<T>::Value ? ObjectType::HasVisitMembers :
+						(HasMethod_begin<T>::Value && HasMethod_end<T>::Value ? ObjectType::Collection :
+							ObjectType::Other));
 		};
 
 		template < typename T, ObjectType::Enum ObjType_ = ObjectTypeGetter<T>::Value >
@@ -53,6 +55,38 @@ namespace hide
 		{
 			static void Write(std::stringstream& s, const T& val)
 			{ s << val.ToString(); }
+		};
+
+		class ToStringVisitor
+		{
+		private:
+			bool&					_first;
+			std::stringstream&		_stream;
+
+		public:
+			ToStringVisitor(bool& first, std::stringstream& stream)
+				: _first(first), _stream(stream)
+			{ }
+
+			template < typename ClassRef, typename C, typename M >
+			void Visit(ClassRef&& inst, const std::string& memberName, M C::*member)
+			{
+				_stream << (_first ? " " : ", ") << memberName << ": ";
+				WriteToStream(_stream, inst.*member);
+				_first = false;
+			}
+		};
+
+		template < typename T >
+		struct Writer<T, ObjectType::HasVisitMembers>
+		{
+			static void Write(std::stringstream& s, const T& val)
+			{
+				s << "{";
+				bool first = true;
+				val.VisitMembers(ToStringVisitor(first, s));
+				s << " }";
+			}
 		};
 
 		template < >
