@@ -44,7 +44,6 @@ namespace hide
 	class CTagsPartialIndex : public virtual IPartialIndex
 	{
 	private:
-		static NamedLogger		s_logger;
 		IIndexEntryPtrArray		_entries;
 
 	public:
@@ -68,7 +67,6 @@ namespace hide
 		virtual Time GetModificationTime() { BOOST_THROW_EXCEPTION(std::runtime_error("Not implemented")); }
 		virtual IIndexEntryPtrArray GetEntries() { return _entries; }
 	};
-	HIDE_NAMED_LOGGER(CTagsPartialIndex);
 
 	HIDE_NAMED_LOGGER(GenericCTagsIndexer);
 
@@ -162,9 +160,6 @@ namespace hide
 
 		std::vector<IIndexEntryPtr> entries;
 		std::transform(ctags_entries.begin(), ctags_entries.end(), std::back_inserter(entries), [](const CTagsIndexEntry& e) { return std::make_shared<CTagsIndexEntry>(e); });
-
-		s_logger.Info() << "ctags_entries: " << ctags_entries;
-		s_logger.Info() << "entries: " << entries;
 
 		return std::make_shared<CTagsPartialIndex>(entries);
 	}
