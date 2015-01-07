@@ -7,6 +7,7 @@
 
 #include <boost/lexical_cast.hpp>
 
+#include <hide/utils/MembersVisitor.h>
 #include <hide/utils/Utils.h>
 
 
@@ -36,6 +37,7 @@ namespace hide
         size_t GetColumn() const		{ return _column; }
 
 		HIDE_DECLARE_TO_STRING_METHOD()
+		HIDE_DECLARE_MEMBERS("filename", &Location::_filename, "line", &Location::_line, "column", &Location::_column)
 	};
 
 	HIDE_DECLARE_WRITE_TO_OSTREAM(Location, s << v.GetFilename() << ':' << (v.GetLine()) << ':' << (v.GetColumn()); )

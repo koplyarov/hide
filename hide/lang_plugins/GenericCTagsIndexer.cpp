@@ -1,17 +1,22 @@
 #include <hide/lang_plugins/GenericCTagsIndexer.h>
 
+#include <fstream>
 #include <future>
 #include <sstream>
 
 #include <boost/algorithm/string.hpp>
+#include <boost/property_tree/json_parser.hpp>
 #include <boost/regex.hpp>
 
 #include <hide/utils/Executable.h>
+#include <hide/utils/MembersVisitor.h>
+#include <hide/utils/PTree.h>
 #include <hide/utils/ReadBufferLinesListener.h>
 
 
 namespace hide
 {
+
 
 	class CTagsIndexEntry : public virtual IIndexEntry
 	{
@@ -21,6 +26,9 @@ namespace hide
 		Location		_location;
 
 	public:
+		CTagsIndexEntry()
+		{ }
+
 		CTagsIndexEntry(const std::string& name, const std::string& fullName, const Location& location)
 			: _name(name), _fullName(fullName), _location(location)
 		{ }
@@ -28,12 +36,15 @@ namespace hide
 		virtual std::string GetName() const		{ return _name; }
 		virtual std::string GetFullName() const	{ return _fullName; }
 		virtual Location GetLocation() const	{ return _location; }
+
+		HIDE_DECLARE_MEMBERS("name", &CTagsIndexEntry::_name, "fullName", &CTagsIndexEntry::_fullName, "location", &CTagsIndexEntry::_location)
 	};
 
 
 	class CTagsPartialIndex : public virtual IPartialIndex
 	{
 	private:
+		static NamedLogger		s_logger;
 		IIndexEntryPtrArray		_entries;
 
 	public:
@@ -41,9 +52,23 @@ namespace hide
 			: _entries(entries)
 		{ }
 
+		virtual void Save(const std::string& filename)
+		{
+			using namespace boost::property_tree;
+
+			PTreeWriter wr;
+			std::vector<CTagsIndexEntry> ctags_entries;
+			std::transform(_entries.begin(), _entries.end(), std::back_inserter(ctags_entries), [](const IIndexEntryPtr& e) { return dynamic_cast<const CTagsIndexEntry&>(*e); });
+			wr.Write("entries", ctags_entries);
+
+			std::ofstream f(filename, std::ios_base::trunc);
+			write_json(f, wr.GetNode());
+		}
+
 		virtual Time GetModificationTime() { BOOST_THROW_EXCEPTION(std::runtime_error("Not implemented")); }
 		virtual IIndexEntryPtrArray GetEntries() { return _entries; }
 	};
+	HIDE_NAMED_LOGGER(CTagsPartialIndex);
 
 	HIDE_NAMED_LOGGER(GenericCTagsIndexer);
 
@@ -115,6 +140,31 @@ namespace hide
 
 		stdout_closed.get_future().wait();
 		ctags.reset();
+
+		return std::make_shared<CTagsPartialIndex>(entries);
+	}
+
+
+	IPartialIndexPtr GenericCTagsIndexer::LoadIndex(const std::string& filename)
+	{
+		using namespace boost::property_tree;
+
+		s_logger.Info() << "Load(" << filename << ")";
+
+
+		ptree root;
+		std::ifstream f(filename);
+		read_json(f, root);
+
+		PTreeReader wr(root);
+		std::vector<CTagsIndexEntry> ctags_entries;
+		PTreeReader(root).Read("entries", ctags_entries);
+
+		std::vector<IIndexEntryPtr> entries;
+		std::transform(ctags_entries.begin(), ctags_entries.end(), std::back_inserter(entries), [](const CTagsIndexEntry& e) { return std::make_shared<CTagsIndexEntry>(e); });
+
+		s_logger.Info() << "ctags_entries: " << ctags_entries;
+		s_logger.Info() << "entries: " << entries;
 
 		return std::make_shared<CTagsPartialIndex>(entries);
 	}

@@ -14,6 +14,7 @@ namespace hide
 		virtual ~IPartialIndexer() { }
 
 		virtual IPartialIndexPtr BuildIndex() { HIDE_PURE_VIRTUAL_CALL(); }
+		virtual IPartialIndexPtr LoadIndex(const std::string& filename) { HIDE_PURE_VIRTUAL_CALL(); }
 	};
 	HIDE_DECLARE_PTR(IPartialIndexer);
 

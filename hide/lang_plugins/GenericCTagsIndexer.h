@@ -19,6 +19,7 @@ namespace hide
 		GenericCTagsIndexer(const std::string& filename);
 
 		virtual IPartialIndexPtr BuildIndex();
+		virtual IPartialIndexPtr LoadIndex(const std::string& filename);
 	};
 }
 
