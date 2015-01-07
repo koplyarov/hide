@@ -68,6 +68,7 @@ namespace hide
 		virtual IIndexEntryPtrArray GetEntries() { return _entries; }
 	};
 
+
 	HIDE_NAMED_LOGGER(GenericCTagsIndexer);
 
 	GenericCTagsIndexer::GenericCTagsIndexer(const std::string& filename)
@@ -91,7 +92,7 @@ namespace hide
 		params.push_back(_filename);
 
 		smatch m;
-		regex re(R"(^([^	]+)	([^	]+)	(\d+);"	(.*)$)");
+		regex re("^([^	]+)	([^	]+)	(\\d+);\"	(.*)$");
 
 		IIndexEntryPtrArray entries;
 
@@ -148,7 +149,6 @@ namespace hide
 		using namespace boost::property_tree;
 
 		s_logger.Info() << "Load(" << filename << ")";
-
 
 		ptree root;
 		std::ifstream f(filename);
