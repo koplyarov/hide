@@ -26,11 +26,12 @@ namespace hide
 			static NamedLogger	s_logger;
 			int					_fd;
 			ByteArray			_data;
+			bool				_endOfData;
 			std::thread			_thread;
 
 		public:
 			PipeReadBuffer(int fd)
-				: _fd(fd)
+				: _fd(fd), _endOfData(false)
 			{
 				//fcntl(out_pipe[read_index], F_SETFL, O_NONBLOCK | O_ASYNC); // TODO: check errors
 				_thread = MakeThread("pipeReadBuffer(" + std::to_string(fd) + ")", std::bind(&PipeReadBuffer::ThreadFunc, this));
@@ -56,7 +57,11 @@ namespace hide
 
 		protected:
 			virtual void PopulateState(const IReadBufferListenerPtr& listener) const
-			{ listener->OnBufferChanged(*this); }
+			{
+				listener->OnBufferChanged(*this);
+				if (_endOfData)
+					listener->OnEndOfData();
+			}
 
 		private:
 			void ThreadFunc()
@@ -65,6 +70,8 @@ namespace hide
 				int ret = 0;
 
 				BOOST_SCOPE_EXIT_ALL(&) {
+					HIDE_LOCK(GetMutex());
+					_endOfData = true;
 					InvokeListeners(std::bind(&IReadBufferListener::OnEndOfData, std::placeholders::_1));
 				};
 
