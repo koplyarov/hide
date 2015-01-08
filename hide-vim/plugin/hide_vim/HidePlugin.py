@@ -27,7 +27,7 @@ class HidePlugin:
         self.__indexQuery = None
         self.__indexQueryListener = None
 
-        self.project = hide.Project.CreateAuto(['.*\\bCMakeFiles\\b.*', '.*\\.git\\b.*'])
+        self.project = hide.Project.CreateAuto(['^(.*/)?\\bCMakeFiles\\b(/.*)?$', '^(.*/)?\\.git\\b(/.*)?$'])
 
     def __del__(self):
         self.InterruptBuild()
