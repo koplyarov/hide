@@ -31,7 +31,6 @@ namespace hide
 
 		virtual void Save(const std::string& filename) { HIDE_PURE_VIRTUAL_CALL(); }
 
-		virtual Time GetModificationTime() { HIDE_PURE_VIRTUAL_CALL(); }
 		virtual IIndexEntryPtrArray GetEntries() { HIDE_PURE_VIRTUAL_CALL(); }
 	};
 	HIDE_DECLARE_PTR(IPartialIndex);

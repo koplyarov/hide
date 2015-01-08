@@ -64,7 +64,6 @@ namespace hide
 			write_json(f, wr.GetNode());
 		}
 
-		virtual Time GetModificationTime() { BOOST_THROW_EXCEPTION(std::runtime_error("Not implemented")); }
 		virtual IIndexEntryPtrArray GetEntries() { return _entries; }
 	};
 
