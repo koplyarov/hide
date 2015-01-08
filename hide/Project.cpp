@@ -17,6 +17,7 @@ namespace hide
 			_files(new ProjectFiles),
 			_indexer(new Indexer(_files))
 	{
+		_fsNotifier.reset(new FileSystemNotifier());
 		s_logger.Info() << "Created";
 	}
 

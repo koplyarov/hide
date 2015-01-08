@@ -13,6 +13,7 @@
 #include <hide/ILanguagePlugin.h>
 #include <hide/Indexer.h>
 #include <hide/ProjectFiles.h>
+#include <hide/utils/FileSystemNotifier.h>
 #include <hide/utils/NamedLogger.h>
 #include <hide/utils/Utils.h>
 
@@ -38,6 +39,7 @@ namespace hide
 		ILanguagePluginPtrArray		_langPlugins;
 		IBuildSystemPtr				_currentBuildSystem;
 		ProjectFilesPtr				_files;
+		FileSystemNotifierPtr		_fsNotifier;
 
 		BuffersMap					_buffers;
 		IndexerPtr					_indexer;
