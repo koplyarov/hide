@@ -68,6 +68,9 @@ class HidePlugin:
     def IndexQueryInProgress(self):
         return self.__indexQueryListener != None and not self.__indexQueryListener.Finished()
 
+    def IndexQueryHasSingleMatch(self):
+        return self.__indexQueryListener != None and self.__indexQueryListener.SingleMatch()
+
     def __DoStartIndexQuery(self, queryFunc):
         if self.IndexQueryInProgress():
             return False

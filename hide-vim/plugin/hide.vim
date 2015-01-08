@@ -124,8 +124,8 @@ function s:DoStartQueryIndex(methodCall)
 	end
 	call s:SyncEverything()
 	exec 'python vim.command("let l:finished = " + ("0" if hidePlugin.IndexQueryInProgress() else "1"))'
-	exec 'python vim.command("let l:matchesCount = " + str(hidePlugin.indexQueryModel.GetCount()))'
-	if finished && matchesCount == 1
+	exec 'python vim.command("let l:singleMatch = " + ("1" if hidePlugin.IndexQueryHasSingleMatch() else "0"))'
+	if finished && singleMatch
 		call s:indexQueryBufInfo.Action(0)
 	else
 		call s:OpenHideWindow(s:indexQueryBufInfo, 1)

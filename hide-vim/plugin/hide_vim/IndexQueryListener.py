@@ -28,6 +28,7 @@ class IndexQueryListener(hide.IIndexQueryListener):
         self.__conditionVar = Condition()
         self.__model = model
         self.__finished = False
+        self.__singleMatch = False
 
     def OnEntry(self, entry):
         self.__model.Insert(-1, IndexQueryModelRow('queryEntry', entry))
@@ -37,11 +38,20 @@ class IndexQueryListener(hide.IIndexQueryListener):
             self.__finished = True
             self.__conditionVar.notifyAll()
             self.__model.Remove(-1)
+            if self.__model.GetCount() == 1:
+                self.__singleMatch = True
+            elif self.__model.GetCount() == 0:
+                self.__model.Append(IndexQueryModelRow('serviceMsg', 'No symbols found.'))
+
 
     def WaitForFinished(self, timeout):
         with self.__conditionVar:
             self.__conditionVar.wait(timeout)
             return self.__finished
+
+    def SingleMatch(self):
+        with self.__conditionVar:
+            return self.__singleMatch
 
     def Finished(self):
         with self.__conditionVar:

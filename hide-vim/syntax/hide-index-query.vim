@@ -3,9 +3,11 @@ if exists("b:current_syntax")
 endif
 
 syntax match searching /^Searching\.\.\.$/
+syntax match noSymbolsFound /^No symbols found\.$/
 syntax match symbolName /^\(\S\)\+\ze (.*)$/
 
 highlight link searching Include
+highlight link noSymbolsFound Include
 highlight link symbolName Type
 
 highlight focusedLine ctermbg=darkred guibg=darkred
