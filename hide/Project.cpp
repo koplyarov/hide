@@ -78,7 +78,8 @@ namespace hide
 		using namespace boost;
 
 		std::vector<regex> skip_regexes;
-		skip_regexes.reserve(skipRegexesList.size());
+		skip_regexes.reserve(skipRegexesList.size() + 1);
+		skip_regexes.push_back(regex("^(.*/)?\\.hide\\b(/.*)?$"));
 		transform(skipRegexesList, std::back_inserter(skip_regexes), [](const std::string& s) { return regex(s); });
 
 		ProjectPtr result(new Project);
