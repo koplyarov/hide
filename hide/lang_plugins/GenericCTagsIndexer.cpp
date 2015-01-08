@@ -22,22 +22,37 @@ namespace hide
 	{
 	private:
 		std::string		_name;
-		std::string		_fullName;
+		std::string		_scope;
 		Location		_location;
 
 	public:
 		CTagsIndexEntry()
 		{ }
 
-		CTagsIndexEntry(const std::string& name, const std::string& fullName, const Location& location)
-			: _name(name), _fullName(fullName), _location(location)
+		CTagsIndexEntry(const std::string& name, const std::string& scope, const Location& location)
+			: _name(name), _scope(scope), _location(location)
 		{ }
 
 		virtual std::string GetName() const		{ return _name; }
-		virtual std::string GetFullName() const	{ return _fullName; }
+		virtual std::string GetScope() const	{ return _scope; }
+		virtual std::string GetFullName() const	{ return _scope.empty() ? _name : _scope + "::" + _name; }
 		virtual Location GetLocation() const	{ return _location; }
 
-		HIDE_DECLARE_MEMBERS("name", &CTagsIndexEntry::_name, "fullName", &CTagsIndexEntry::_fullName, "location", &CTagsIndexEntry::_location)
+		void WriteToPTree(boost::property_tree::ptree& node) const
+		{
+			PTreeWriter w(node);
+			w.Write("name", _name).Write("scope", _scope).Write("line", _location.GetLine());
+		}
+
+		void ReadFromPTree(const boost::property_tree::ptree& node)
+		{
+			PTreeReader r(node);
+			size_t line;
+			r.Read("name", _name).Read("scope", _scope).Read("line", line);
+			_location = Location("", line, 1);
+		}
+
+		HIDE_DECLARE_MEMBERS("name", &CTagsIndexEntry::_name, "scope", &CTagsIndexEntry::_scope, "location", &CTagsIndexEntry::_location)
 	};
 
 
@@ -55,13 +70,15 @@ namespace hide
 		{
 			using namespace boost::property_tree;
 
-			PTreeWriter wr;
 			std::vector<CTagsIndexEntry> ctags_entries;
 			std::transform(_entries.begin(), _entries.end(), std::back_inserter(ctags_entries), [](const IIndexEntryPtr& e) { return dynamic_cast<const CTagsIndexEntry&>(*e); });
-			wr.Write("entries", ctags_entries);
+
+			ptree root;
+			PTreeWriter w(root);
+			w.Write("entries", ctags_entries);
 
 			std::ofstream f(filename, std::ios_base::trunc);
-			write_json(f, wr.GetNode());
+			write_json(f, root, false);
 		}
 
 		virtual IIndexEntryPtrArray GetEntries() { return _entries; }
@@ -80,8 +97,6 @@ namespace hide
 		using namespace boost;
 
 		typedef std::map<std::string, std::string> FieldsMap;
-
-		s_logger.Info() << "BuildIndex(), filename: " << _filename;
 
 		StringArray params;
 		params.push_back("-f-");
@@ -118,17 +133,15 @@ namespace hide
 							fields.insert(std::make_pair(field_to_parse.substr(0, colon_pos), field_to_parse.substr(colon_pos + 1)));
 						}
 
-						std::string fullname;
+						std::string scope;
 						if (fields.find("class") != fields.end())
-							fullname = fields["class"] + "::" + name;
+							scope = fields["class"];
 						else if (fields.find("struct") != fields.end())
-							fullname = fields["struct"] + "::" + name;
+							scope = fields["struct"];
 						else if (fields.find("namespace") != fields.end())
-							fullname = fields["namespace"] + "::" + name;
-						else
-							fullname = name;
+							scope = fields["namespace"];
 
-						entries.push_back(std::make_shared<CTagsIndexEntry>(name, fullname, Location(_filename, line, 1)));
+						entries.push_back(std::make_shared<CTagsIndexEntry>(name, scope, Location(_filename, line, 1)));
 					}
 					else
 						s_logger.Warning() << "Could not parse ctags output line: '" << s << "'";
@@ -147,8 +160,6 @@ namespace hide
 	{
 		using namespace boost::property_tree;
 
-		s_logger.Info() << "Load(" << filename << ")";
-
 		ptree root;
 		std::ifstream f(filename);
 		read_json(f, root);
@@ -158,7 +169,8 @@ namespace hide
 		PTreeReader(root).Read("entries", ctags_entries);
 
 		std::vector<IIndexEntryPtr> entries;
-		std::transform(ctags_entries.begin(), ctags_entries.end(), std::back_inserter(entries), [](const CTagsIndexEntry& e) { return std::make_shared<CTagsIndexEntry>(e); });
+		for (auto e : ctags_entries)
+			entries.push_back(std::make_shared<CTagsIndexEntry>(e.GetName(), e.GetScope(), Location(_filename, e.GetLocation().GetLine(), 1)));
 
 		return std::make_shared<CTagsPartialIndex>(entries);
 	}
