@@ -84,7 +84,7 @@ namespace hide
 
 	void DefaultBuildProcess::PipeClosedHandler(bool& flag)
 	{
-		s_logger.Info() << "DefaultBuildProcess::PipeClosedHandler(bool& flag)";
+		s_logger.Debug() << "DefaultBuildProcess::PipeClosedHandler(bool& flag)";
 		HIDE_LOCK(_mutex);
 		flag = true;
 		TryReportFinished();
@@ -93,7 +93,7 @@ namespace hide
 
 	void DefaultBuildProcess::SetRetCode(int retCode)
 	{
-		s_logger.Info() << "DefaultBuildProcess::SetRetCode(" << retCode << ")";
+		s_logger.Debug() << "DefaultBuildProcess::SetRetCode(" << retCode << ")";
 		HIDE_LOCK(_mutex);
 		_retCode = retCode;
 		TryReportFinished();
