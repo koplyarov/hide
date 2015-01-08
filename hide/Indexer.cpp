@@ -1,6 +1,10 @@
 #include <hide/Indexer.h>
 
+#include <boost/filesystem.hpp>
+#include <boost/property_tree/json_parser.hpp>
+
 #include <hide/utils/ListenersHolder.h>
+#include <hide/utils/PTree.h>
 
 
 namespace hide
@@ -56,7 +60,7 @@ namespace hide
 		TestIndexQuery(const Indexer* indexer, const CheckEntryFunc& checkEntryFunc)
 			: _indexer(indexer), _checkEntryFunc(checkEntryFunc), _finished(false)
 		{
-			_thread = std::thread(std::bind(&TestIndexQuery::ThreadFunc, this));
+			_thread = MakeThread("testIndeQuery", std::bind(&TestIndexQuery::ThreadFunc, this));
 		}
 
 		~TestIndexQuery()
@@ -114,12 +118,79 @@ namespace hide
 	}
 
 
+	class PartialIndexMetaInfo
+	{
+	private:
+		Time		_modificationTime;
+
+	public:
+		PartialIndexMetaInfo()
+		{ }
+
+		PartialIndexMetaInfo(Time modificationTime)
+			: _modificationTime(modificationTime)
+		{ }
+
+		Time GetModificationTime() const { return _modificationTime; }
+
+		HIDE_DECLARE_MEMBERS("modificationTime", &PartialIndexMetaInfo::_modificationTime);
+	};
+
+
 	void Indexer::OnFileAdded(const IFilePtr& file)
 	{
+		using namespace boost::filesystem;
+
 		IIndexableIdPtr id = file->GetIndexableId();
+
+		path index_file(path(".hide/index") / path(file->GetFilename() + ".index"));
+		path meta_file(path(".hide/index") / path(file->GetFilename() + ".meta"));
+
+		if (is_regular_file(meta_file))
+		{
+			PartialIndexMetaInfo old_meta_info;
+			try
+			{
+				boost::property_tree::ptree meta_root;
+				std::ifstream f(meta_file.string());
+				boost::property_tree::read_json(f, meta_root);
+				PTreeReader wr(meta_root);
+				PTreeReader(meta_root).Read("metaInfo", old_meta_info);
+
+				if (old_meta_info.GetModificationTime() == file->GetModificationTime() && is_regular_file(index_file))
+				{
+					try
+					{
+						s_logger.Debug() << "Loading " << file << " index from " << index_file;
+						IPartialIndexPtr index = file->GetIndexer()->LoadIndex(index_file.string());
+						HIDE_LOCK(_mutex);
+						_partialIndexes.insert(std::make_pair(id, index));
+						return;
+					}
+					catch (const std::exception& ex)
+					{ s_logger.Warning() << "Cannot load " << file << " index: " << boost::diagnostic_information(ex); }
+				}
+			}
+			catch (const std::exception& ex)
+			{ s_logger.Warning() << "Cannot read " << file << " metainfo: " << boost::diagnostic_information(ex); }
+		}
+
+		s_logger.Info() << "Building " << file << " index";
 		IPartialIndexPtr index = file->GetIndexer()->BuildIndex();
-		HIDE_LOCK(_mutex);
-		_partialIndexes.insert(std::make_pair(id, index));
+		{
+			HIDE_LOCK(_mutex);
+			_partialIndexes.insert(std::make_pair(id, index));
+		}
+
+		s_logger.Debug() << "Saving " << file << " index to " << index_file;
+		boost::filesystem::create_directories(index_file.parent_path());
+		index->Save(index_file.string());
+
+		boost::property_tree::ptree meta_root;
+		PTreeWriter w(meta_root);
+		w.Write("metaInfo", PartialIndexMetaInfo(file->GetModificationTime()));
+		std::ofstream f(meta_file.string(), std::ios_base::trunc);
+		boost::property_tree::write_json(f, meta_root, false);
 	}
 
 }
