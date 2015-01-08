@@ -44,7 +44,7 @@ namespace cpp
 
 
 	Time File::GetModificationTime()
-	{ return std::chrono::system_clock::from_time_t(last_write_time(_filename)); }
+	{ return last_write_time(_filename); }
 
 
 	IPartialIndexerPtr File::GetIndexer()
