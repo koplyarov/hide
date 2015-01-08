@@ -6,6 +6,7 @@
 /*.taghl
 /.buildSettings
 /.clang_complete
+/.hide
 /CMakeCache.txt
 /CMakeFiles
 /bin
