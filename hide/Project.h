@@ -30,19 +30,22 @@ namespace hide
 
 		typedef std::map<std::string, BufferPtr>	BuffersMap;
 
+		class FileSystemNotifierListener;
+
 	public:
 		typedef std::vector<IFilePtr>				FilesVector;
 
 	private:
-		static NamedLogger			s_logger;
-		IBuildSystemProberPtrArray	_buildSystemProbers;
-		ILanguagePluginPtrArray		_langPlugins;
-		IBuildSystemPtr				_currentBuildSystem;
-		ProjectFilesPtr				_files;
-		FileSystemNotifierPtr		_fsNotifier;
+		static NamedLogger				s_logger;
+		IBuildSystemProberPtrArray		_buildSystemProbers;
+		ILanguagePluginPtrArray			_langPlugins;
+		IBuildSystemPtr					_currentBuildSystem;
+		ProjectFilesPtr					_files;
+		IFileSysterNotifierListenerPtr	_fsNotifierListener;
+		FileSystemNotifierPtr			_fsNotifier;
 
-		BuffersMap					_buffers;
-		IndexerPtr					_indexer;
+		BuffersMap						_buffers;
+		IndexerPtr						_indexer;
 
 	public:
 		Project();
@@ -61,6 +64,7 @@ namespace hide
 
 	private:
 		void ScanProjectFunc(const boost::filesystem::path& p, const std::vector<boost::regex>& skipList, const std::string& indent = "");
+		void OnFileSystemEvent(FileSystemNotifierTarget target, FileSystemNotifierEvent event, const std::string& path);
 	};
 
 }

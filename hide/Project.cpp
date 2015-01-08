@@ -9,6 +9,21 @@
 namespace hide
 {
 
+	class Project::FileSystemNotifierListener : public virtual IFileSysterNotifierListener
+	{
+	private:
+		Project*		_inst;
+
+	public:
+		FileSystemNotifierListener(Project* inst)
+			: _inst(inst)
+		{ }
+
+		virtual void OnEvent(FileSystemNotifierTarget target, FileSystemNotifierEvent event, const std::string& path)
+		{ _inst->OnFileSystemEvent(target, event, path); }
+	};
+
+
 	HIDE_NAMED_LOGGER(Project);
 
 	Project::Project()
@@ -18,6 +33,8 @@ namespace hide
 			_indexer(new Indexer(_files))
 	{
 		_fsNotifier.reset(new FileSystemNotifier());
+		_fsNotifierListener.reset(new FileSystemNotifierListener(this));
+		_fsNotifier->AddListener(_fsNotifierListener);
 		s_logger.Info() << "Created";
 	}
 
@@ -25,6 +42,7 @@ namespace hide
 	Project::~Project()
 	{
 		s_logger.Info() << "Destroying";
+		_fsNotifier->RemoveListener(_fsNotifierListener);
 	}
 
 
@@ -96,23 +114,32 @@ namespace hide
 		if (find_if(skipList, [&p](const regex& re) { smatch m; return regex_match(p.string(), m, re); }) != skipList.end())
 			return;
 
-		for (std::vector<ILanguagePluginPtr>::const_iterator it = _langPlugins.begin(); it != _langPlugins.end(); ++it)
-		{
-			IFilePtr f = (*it)->ProbeFile(p.string());
-
-			if (f)
-			{
-				_files->AddFile(f);
-				break;
-			}
-		}
-
 		if (is_directory(p))
 		{
+			_fsNotifier->AddPath(p.string());
 			directory_iterator end;
 			for (directory_iterator it(p); it != end; ++it)
 				ScanProjectFunc(*it, skipList, indent + "  ");
 		}
+		else
+		{
+			for (auto lp : _langPlugins)
+			{
+				IFilePtr f = lp->ProbeFile(p.string());
+
+				if (f)
+				{
+					_files->AddFile(f);
+					break;
+				}
+			}
+		}
+	}
+
+
+	void Project::OnFileSystemEvent(FileSystemNotifierTarget target, FileSystemNotifierEvent event, const std::string& path)
+	{
+		s_logger.Info() << "OnFileSystemEvent(" << target << ", " << event << ", " << path << ")";
 	}
 
 }
