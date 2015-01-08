@@ -165,6 +165,23 @@ namespace hide
 		operator std::string() const
 		{ return ToString(); }
 	};
+
+
+	template < typename T >
+	class HexValue
+	{
+	private:
+		T		_value;
+
+	public:
+		HexValue(T value) : _value(value) { }
+
+		std::string ToString() const { return StringBuilder() % "0x" % std::hex % _value; }
+	};
+
+	template < typename T >
+	HexValue<T> Hex(T value)
+	{ return HexValue<T>(value); }
 }
 
 #endif
