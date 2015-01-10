@@ -45,4 +45,23 @@ namespace hide
 		return result;
 	}
 
+
+	bool PathContains(boost::filesystem::path dir, boost::filesystem::path file)
+	{
+		using namespace boost::filesystem;
+		dir.normalize();
+		file.normalize();
+
+		if (dir.filename() == ".")
+			dir.remove_filename();
+		file.remove_filename();
+
+		auto dir_len = std::distance(dir.begin(), dir.end());
+		auto file_len = std::distance(file.begin(), file.end());
+		if (dir_len > file_len)
+			return false;
+
+		return std::equal(dir.begin(), dir.end(), file.begin());
+	}
+
 }

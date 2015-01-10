@@ -9,6 +9,7 @@ namespace hide
 {
 
 	boost::filesystem::path RelativePath(const boost::filesystem::path &path, const boost::filesystem::path &relative_to);
+	bool PathContains(boost::filesystem::path dir, boost::filesystem::path file);
 
 }
 
