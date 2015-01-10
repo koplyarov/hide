@@ -4,6 +4,7 @@
 
 #include <hide/buildsystems/cmake/CMakeBuildSystem.h>
 #include <hide/lang_plugins/cpp/LanguagePlugin.h>
+#include <hide/utils/FileSystemUtils.h>
 
 
 namespace hide
@@ -26,8 +27,9 @@ namespace hide
 
 	HIDE_NAMED_LOGGER(Project);
 
-	Project::Project()
-		:	_buildSystemProbers{ std::make_shared<CMakeBuildSystemProber>() },
+	Project::Project(const RegexesVector& skipList)
+		:	_skipList(skipList),
+			_buildSystemProbers{ std::make_shared<CMakeBuildSystemProber>() },
 			_langPlugins{ std::make_shared<cpp::LanguagePlugin>() },
 			_files(new ProjectFiles),
 			_indexer(new Indexer(_files))
@@ -85,8 +87,16 @@ namespace hide
 		using namespace boost::filesystem;
 
 		for (auto f : GetFiles())
-			if (equivalent(f->GetFilename(), filepath))
+		{
+			path p(filepath);
+			p.normalize();
+
+			path fp(f->GetFilename());
+			fp.normalize();
+
+			if (p == fp)
 				return f;
+		}
 		return nullptr;
 	}
 
@@ -100,18 +110,18 @@ namespace hide
 		skip_regexes.push_back(regex("^(.*/)?\\.hide\\b(/.*)?$"));
 		transform(skipRegexesList, std::back_inserter(skip_regexes), [](const std::string& s) { return regex(s); });
 
-		ProjectPtr result(new Project);
-		result->ScanProjectFunc(".", skip_regexes);
+		ProjectPtr result(new Project(skip_regexes));
+		result->ScanProjectFunc(".");
 		return result;
 	}
 
 
-	void Project::ScanProjectFunc(const boost::filesystem::path& p, const std::vector<boost::regex>& skipList, const std::string& indent)
+	void Project::ScanProjectFunc(const boost::filesystem::path& p)
 	{
 		using namespace boost;
 		using namespace boost::filesystem;
 
-		if (find_if(skipList, [&p](const regex& re) { smatch m; return regex_match(p.string(), m, re); }) != skipList.end())
+		if (find_if(_skipList, [&p](const regex& re) { smatch m; return regex_match(p.string(), m, re); }) != _skipList.end())
 			return;
 
 		if (is_directory(p))
@@ -119,7 +129,7 @@ namespace hide
 			_fsNotifier->AddPath(p.string());
 			directory_iterator end;
 			for (directory_iterator it(p); it != end; ++it)
-				ScanProjectFunc(*it, skipList, indent + "  ");
+				ScanProjectFunc(*it);
 		}
 		else
 		{
@@ -139,7 +149,46 @@ namespace hide
 
 	void Project::OnFileSystemEvent(FileSystemNotifierTarget target, FileSystemNotifierEvent event, const std::string& path)
 	{
-		s_logger.Info() << "OnFileSystemEvent(" << target << ", " << event << ", " << path << ")";
+		switch (event.GetRaw())
+		{
+		case FileSystemNotifierEvent::Added:
+			ScanProjectFunc(path);
+			break;
+		case FileSystemNotifierEvent::Removed:
+			switch(target.GetRaw())
+			{
+			case FileSystemNotifierTarget::File:
+				{
+					IFilePtr file = GetFileByPath(path);
+					if (file)
+						_files->RemoveFile(file); // TODO: reimplement
+				}
+				break;
+			case FileSystemNotifierTarget::Directory:
+				for (auto f : _files->GetFiles())
+				{
+					if (PathContains(path, f->GetFilename()))
+						_files->RemoveFile(f); // TODO: reimplement
+				}
+				break;
+			}
+			break;
+		case FileSystemNotifierEvent::Modified:
+			switch(target.GetRaw())
+			{
+			case FileSystemNotifierTarget::File:
+				{
+					IFilePtr file = GetFileByPath(path);
+					if (file)
+						_files->ReportModified(file); // TODO: reimplement
+				}
+				break;
+			case FileSystemNotifierTarget::Directory:
+				s_logger.Warning() << __func__ << "target: " << target << ", event: " << event <<  " - Not implemented!";
+				break;
+			}
+			break;
+		}
 	}
 
 }

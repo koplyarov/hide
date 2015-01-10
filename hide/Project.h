@@ -34,9 +34,13 @@ namespace hide
 
 	public:
 		typedef std::vector<IFilePtr>				FilesVector;
+		typedef std::vector<boost::regex>			RegexesVector;
 
 	private:
 		static NamedLogger				s_logger;
+
+
+		RegexesVector					_skipList;
 		IBuildSystemProberPtrArray		_buildSystemProbers;
 		ILanguagePluginPtrArray			_langPlugins;
 		IBuildSystemPtr					_currentBuildSystem;
@@ -48,7 +52,7 @@ namespace hide
 		IndexerPtr						_indexer;
 
 	public:
-		Project();
+		Project(const RegexesVector& skipList);
 		~Project();
 
 		IBuildSystemPtr GetBuildSystem();
@@ -63,7 +67,7 @@ namespace hide
 		static ProjectPtr CreateAuto(const StringArray& skipRegexesList);
 
 	private:
-		void ScanProjectFunc(const boost::filesystem::path& p, const std::vector<boost::regex>& skipList, const std::string& indent = "");
+		void ScanProjectFunc(const boost::filesystem::path& p);
 		void OnFileSystemEvent(FileSystemNotifierTarget target, FileSystemNotifierEvent event, const std::string& path);
 	};
 
