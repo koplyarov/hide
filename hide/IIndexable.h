@@ -23,9 +23,11 @@ namespace hide
 	{
 		virtual ~IIndexable() { }
 
-		virtual IIndexableIdPtr GetIndexableId() { HIDE_PURE_VIRTUAL_CALL(); }
-		virtual Time GetModificationTime() { HIDE_PURE_VIRTUAL_CALL(); }
+		virtual IIndexableIdPtr GetIndexableId() const { HIDE_PURE_VIRTUAL_CALL(); }
+		virtual Time GetModificationTime() const { HIDE_PURE_VIRTUAL_CALL(); }
 		virtual IPartialIndexerPtr GetIndexer() { HIDE_PURE_VIRTUAL_CALL(); }
+
+		virtual std::string ToString() const { return GetIndexableId()->ToString(); }
 	};
 	HIDE_DECLARE_PTR(IIndexable);
 

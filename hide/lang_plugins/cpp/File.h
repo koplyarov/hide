@@ -19,8 +19,8 @@ namespace cpp
 
 		virtual std::string GetFilename() const { return _filename; }
 
-		virtual IIndexableIdPtr GetIndexableId();
-		virtual Time GetModificationTime();
+		virtual IIndexableIdPtr GetIndexableId() const;
+		virtual Time GetModificationTime() const;
 		virtual IPartialIndexerPtr GetIndexer();
 	};
 

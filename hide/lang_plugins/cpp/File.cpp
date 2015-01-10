@@ -41,11 +41,11 @@ namespace cpp
 	{ }
 
 
-	IIndexableIdPtr File::GetIndexableId()
+	IIndexableIdPtr File::GetIndexableId() const
 	{ return std::make_shared<FileIndexableId>(_filename); }
 
 
-	Time File::GetModificationTime()
+	Time File::GetModificationTime() const
 	{ return last_write_time(_filename); }
 
 
