@@ -6,7 +6,7 @@
 #include <mutex>
 #include <queue>
 
-#include <boost/variant.hpp>
+#include <boost/filesystem.hpp>
 
 #include <hide/IIndexQuery.h>
 #include <hide/IIndexable.h>
@@ -26,7 +26,7 @@ namespace hide
 
 		struct EventType
 		{
-			HIDE_ENUM_VALUES(IndexableAdded, IndexableRemoved);
+			HIDE_ENUM_VALUES(IndexableAdded, IndexableRemoved, RemoveOutdatedFiles);
 			HIDE_ENUM_CLASS(EventType);
 		};
 
@@ -45,15 +45,19 @@ namespace hide
 
 		class IndexQuery;
 
+		class PartialIndexInfo;
+		HIDE_DECLARE_PTR(PartialIndexInfo);
+
 		typedef std::queue<IndexQueryInfoPtr>							QueriesQueue;
 		typedef std::queue<Event>										EventQueue;
-		typedef std::map<IIndexableIdPtr, IPartialIndexPtr, Less>		PartialIndexes;
+		typedef std::map<IIndexableIdPtr, PartialIndexInfoPtr, Less>	PartialIndexes;
 
 		class FilesListener;
 		HIDE_DECLARE_PTR(FilesListener);
 
 	private:
 		static NamedLogger					s_logger;
+		static const std::string			s_indexDirectory;
 		mutable std::mutex					_mutex;
 		mutable std::condition_variable		_condVar;
 		bool								_working;
@@ -76,8 +80,16 @@ namespace hide
 
 		IIndexQueryPtr DoQuerySymbols(const std::function<bool(const IIndexEntryPtr&)>& checkEntryFunc);
 
-		void OnFileAdded(const IFilePtr& file);
-		void OnFileRemoved(const IFilePtr& file);
+		void AddIndexable(const IIndexablePtr& indexable);
+		void RemoveIndexable(const IIndexablePtr& indexable);
+		void RemoveOutdatedFiles();
+
+		void AddPartialIndex(const IIndexableIdPtr& indexableId, const PartialIndexInfoPtr& partialIndex);
+		void RemovePartialIndex(const IIndexableIdPtr& indexableId);
+
+		static void DoRemoveFile(const boost::filesystem::path& filepath);
+		static boost::filesystem::path GetIndexFilePath(const IIndexablePtr& indexable);
+		static boost::filesystem::path GetMetaFilePath(const IIndexablePtr& indexable);
 	};
 	HIDE_DECLARE_PTR(Indexer);
 

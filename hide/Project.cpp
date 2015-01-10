@@ -31,12 +31,16 @@ namespace hide
 		:	_skipList(skipList),
 			_buildSystemProbers{ std::make_shared<CMakeBuildSystemProber>() },
 			_langPlugins{ std::make_shared<cpp::LanguagePlugin>() },
-			_files(new ProjectFiles),
-			_indexer(new Indexer(_files))
+			_files(new ProjectFiles)
 	{
 		_fsNotifier.reset(new FileSystemNotifier());
 		_fsNotifierListener.reset(new FileSystemNotifierListener(this));
 		_fsNotifier->AddListener(_fsNotifierListener);
+
+		ScanProjectFunc(".");
+
+		_indexer.reset(new Indexer(_files));
+
 		s_logger.Info() << "Created";
 	}
 
@@ -111,7 +115,6 @@ namespace hide
 		transform(skipRegexesList, std::back_inserter(skip_regexes), [](const std::string& s) { return regex(s); });
 
 		ProjectPtr result(new Project(skip_regexes));
-		result->ScanProjectFunc(".");
 		return result;
 	}
 
