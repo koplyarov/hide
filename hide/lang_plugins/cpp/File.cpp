@@ -22,6 +22,8 @@ namespace cpp
 			: _path(RelativePath(filename, current_path()))
 		{ }
 
+		virtual std::string ToString() const { return _path.string(); }
+
 	protected:
 		virtual int DoCompare(const FileIndexableId& other) const
 		{

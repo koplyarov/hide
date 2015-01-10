@@ -13,6 +13,8 @@ namespace hide
 	struct IIndexableId : public virtual IComparable
 	{
 		virtual ~IIndexableId() { }
+
+		virtual std::string ToString() const { HIDE_PURE_VIRTUAL_CALL(); }
 	};
 	HIDE_DECLARE_PTR(IIndexableId);
 
