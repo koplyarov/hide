@@ -70,7 +70,7 @@ namespace hide
 	{
 		template < typename T >
 		bool operator () (const T& l, const T& r) const
-		{ return Detail::Comparers::InvokeCompare(l, r); }
+		{ return Detail::Comparers::InvokeCompare(l, r) < 0; }
 	};
 
 }
