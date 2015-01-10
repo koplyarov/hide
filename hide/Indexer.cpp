@@ -158,7 +158,7 @@ namespace hide
 				continue;
 			}
 
-			while (!_events.empty())
+			if (!_events.empty())
 			{
 				Event e = _events.front();
 				_events.pop();
@@ -181,8 +181,7 @@ namespace hide
 					break;
 				}
 			}
-
-			while (!_queries.empty())
+			else if (!_queries.empty())
 			{
 				IndexQueryInfoPtr q = _queries.front();
 				_queries.pop();
