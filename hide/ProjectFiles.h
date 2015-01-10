@@ -19,6 +19,7 @@ namespace hide
 
 		virtual void OnFileAdded(const IFilePtr& file) { HIDE_PURE_VIRTUAL_CALL(); }
 		virtual void OnFileRemoved(const IFilePtr& file) { HIDE_PURE_VIRTUAL_CALL(); }
+		virtual void OnFileModified(const IFilePtr& file) { HIDE_PURE_VIRTUAL_CALL(); }
 	};
 	HIDE_DECLARE_PTR(IProjectFilesListener);
 
@@ -34,6 +35,7 @@ namespace hide
 	public:
 		void AddFile(const IFilePtr& file);
 		void RemoveFile(const IFilePtr& file);
+		void ReportModified(const IFilePtr& file);
 
 		FilesVector GetFiles() const
 		{

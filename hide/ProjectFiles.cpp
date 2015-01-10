@@ -20,6 +20,13 @@ namespace hide
 	}
 
 
+	void ProjectFiles::ReportModified(const IFilePtr& file)
+	{
+		HIDE_LOCK(GetMutex());
+		InvokeListeners(std::bind(&IProjectFilesListener::OnFileModified, std::placeholders::_1, file));
+	}
+
+
 	void ProjectFiles::PopulateState(const IProjectFilesListenerPtr& listener) const
 	{
 		for (auto f : _files)
