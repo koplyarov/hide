@@ -5,6 +5,7 @@
 #include <hide/buildsystems/cmake/CMakeBuildSystem.h>
 #include <hide/lang_plugins/cpp/LanguagePlugin.h>
 #include <hide/utils/FileSystemUtils.h>
+#include <hide/utils/Profiler.h>
 
 
 namespace hide
@@ -37,7 +38,9 @@ namespace hide
 		_fsNotifierListener.reset(new FileSystemNotifierListener(this));
 		_fsNotifier->AddListener(_fsNotifierListener);
 
+		Profiler<> profiler;
 		ScanProjectFunc(".");
+		s_logger.Info() << "Project files scan: " << profiler.Reset();
 
 		_indexer.reset(new Indexer(_files));
 
