@@ -2,6 +2,7 @@
 #define HIDE_UTILS_STRINGBUILDER_H
 
 
+#include <chrono>
 #include <memory>
 #include <sstream>
 #include <utility>
@@ -152,6 +153,57 @@ namespace hide
 					WriteToStream(s, *val);
 				else
 					s << "null";
+			}
+		};
+
+		template < typename Rep, typename Period >
+		struct Writer<std::chrono::duration<Rep, Period>, ObjectType::Other>
+		{
+			static void Write(std::stringstream& stream, std::chrono::duration<Rep, Period> val)
+			{
+				using namespace std::chrono;
+				auto us = duration_cast<microseconds>(val).count() % 1000;
+				auto ms = duration_cast<milliseconds>(val).count() % 1000;
+				auto s = duration_cast<seconds>(val).count() % 60;
+				auto m = duration_cast<minutes>(val).count() % 60;
+				auto h = duration_cast<hours>(val).count();
+
+				bool empty = true;
+
+				if (h > 0)
+				{
+					stream << (empty ? "" : " ") << h << "h";
+					empty = false;
+				}
+				if (m > 0 || !empty)
+				{
+					stream << (empty ? "" : " ") << m << "m";
+					empty = false;
+				}
+				if (s > 0 || !empty)
+				{
+					stream << (empty ? "" : " ") << s;
+					if (ms > 0)
+						stream << "." << std::setfill('0') << std::setw(3) << ms;
+					stream << "s";
+					empty = false;
+				}
+				if (ms > 0 && empty)
+				{
+					stream << (empty ? "" : " ") << ms;
+					if (us > 0)
+						stream << "." << std::setfill('0') << std::setw(3) << us;
+					stream << "ms";
+					empty = false;
+				}
+				if (us > 0 && empty)
+				{
+					stream << (empty ? "" : " ") << us << "us";
+					empty = false;
+				}
+
+				if (empty)
+					stream << "0s";
 			}
 		};
 	}}
