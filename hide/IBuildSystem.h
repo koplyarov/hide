@@ -22,21 +22,6 @@ namespace hide
 		HIDE_ENUM_VALUES(Succeeded, Failed, Interrupted);
 		HIDE_ENUM_CLASS(BuildStatus);
 
-		BuildStatus()
-			: _val(Succeeded)
-		{ }
-
-		std::string ToString() const
-		{
-			switch (GetRaw())
-			{
-			case BuildStatus::Succeeded:	return "Succeeded";
-			case BuildStatus::Failed:		return "Failed";
-			case BuildStatus::Interrupted:	return "Interrupted";
-			default:						BOOST_THROW_EXCEPTION(std::runtime_error(StringBuilder() % "Unknown BuildStatus value: " % _val));
-			}
-		}
-
 		HIDE_DECLARE_SWIG_TO_STRING_WRAPPER();
 	};
 

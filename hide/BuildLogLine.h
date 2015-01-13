@@ -15,22 +15,6 @@ namespace hide
 		HIDE_ENUM_VALUES(Unknown, Note, Warning, Error);
 		HIDE_ENUM_CLASS(BuildIssueType);
 
-		BuildIssueType()
-			: _val(Unknown)
-		{ }
-
-		std::string ToString() const
-		{
-			switch (GetRaw())
-			{
-			case BuildIssueType::Unknown:	return "Unknown";
-			case BuildIssueType::Note:		return "Note";
-			case BuildIssueType::Warning:	return "Warning";
-			case BuildIssueType::Error:		return "Error";
-			default:						BOOST_THROW_EXCEPTION(std::runtime_error(StringBuilder() % "Unknown BuildIssueType value: " % _val));
-			}
-		}
-
 		HIDE_DECLARE_SWIG_TO_STRING_WRAPPER();
 	};
 

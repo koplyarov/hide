@@ -16,22 +16,6 @@ namespace hide
 		HIDE_ENUM_VALUES(Debug, Info, Warning, Error);
 		HIDE_ENUM_CLASS(LogLevel);
 
-		LogLevel()
-			: _val(Debug)
-		{ }
-
-		std::string ToString() const
-		{
-			switch (GetRaw())
-			{
-			case LogLevel::Debug:	return "Debug";
-			case LogLevel::Info:	return "Info";
-			case LogLevel::Warning:	return "Warning";
-			case LogLevel::Error:	return "Error";
-			default:				BOOST_THROW_EXCEPTION(std::runtime_error(StringBuilder() % "Unknown LogLevel value: " % _val));
-			}
-		}
-
 		HIDE_DECLARE_SWIG_TO_STRING_WRAPPER();
 	};
 

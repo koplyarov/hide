@@ -53,13 +53,29 @@ namespace hide
 		return s; \
 	}
 
+#define DETAIL_HIDE_ENUM_TO_STRING_CASE(R_, Data_, Elem_) case Elem_: return BOOST_PP_STRINGIZE(Elem_);
 #define HIDE_ENUM_VALUES(...) \
-	public: enum Enum { __VA_ARGS__ };
+	public: \
+		enum Enum { __VA_ARGS__ }; \
+	private: \
+		static Enum DoGetFirstVal(Enum first, ...) { return first; } \
+		static Enum GetFirstVal() { return DoGetFirstVal(__VA_ARGS__); } \
+	public: \
+		std::string ToString() const \
+		{ \
+			switch (_val) \
+			{ \
+				BOOST_PP_SEQ_FOR_EACH(DETAIL_HIDE_ENUM_TO_STRING_CASE, ~, BOOST_PP_TUPLE_TO_SEQ((__VA_ARGS__))) \
+			default: return GetClassName() + "(" + std::to_string(_val) + ")"; \
+			} \
+		}
 
 #define HIDE_ENUM_CLASS(Class_) \
 	private: \
 		Enum _val; \
+		static std::string GetClassName() { return #Class_; } \
 	public: \
+		Class_() : _val(GetFirstVal()) { } \
 		Class_(Enum val) : _val(val) { } \
 		operator Enum () const { return GetRaw(); } \
 		Enum GetRaw() const { return _val; }
