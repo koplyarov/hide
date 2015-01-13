@@ -6,6 +6,7 @@
 #include <sstream>
 #include <utility>
 
+#include <boost/exception/diagnostic_information.hpp>
 #include <boost/filesystem/path.hpp>
 
 #include <hide/utils/ClassContentChecks.h>
@@ -20,7 +21,7 @@ namespace hide
 	{
 		struct ObjectType
 		{
-			HIDE_ENUM_VALUES(HasToString, HasVisitMembers, Collection, Other);
+			HIDE_ENUM_VALUES(HasToString, HasVisitMembers, Collection, Exception, Other);
 			HIDE_ENUM_CLASS(ObjectType);
 		};
 
@@ -36,7 +37,8 @@ namespace hide
 				HasMethod_ToString<T>::Value ? ObjectType::HasToString :
 					(HasMethod_VisitMembers<T>::Value ? ObjectType::HasVisitMembers :
 						(HasMethod_begin<T>::Value && HasMethod_end<T>::Value ? ObjectType::Collection :
-							ObjectType::Other));
+							(std::is_base_of<std::exception, T>::value ? ObjectType::Exception :
+								ObjectType::Other)));
 		};
 
 		template < typename T, ObjectType::Enum ObjType_ = ObjectTypeGetter<T>::Value >
@@ -119,6 +121,14 @@ namespace hide
 				s << " ]";
 			}
 		};
+
+		template < typename T >
+		struct Writer<T, ObjectType::Exception>
+		{
+			static void Write(std::stringstream& s, const T& val)
+			{ s << boost::diagnostic_information(val); }
+		};
+
 
 		template < typename K, typename V >
 		struct Writer<std::pair<K, V>, ObjectType::Other>
