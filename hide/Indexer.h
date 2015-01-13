@@ -35,22 +35,23 @@ namespace hide
 			EventType			Type;
 			IIndexablePtr		Indexable;
 
-			Event(EventType type, const IIndexablePtr indexable)
-				: Type(type), Indexable(indexable)
-			{ }
+			HIDE_DECLARE_MEMBERS("type", &Indexer::Event::Type, "indexable", &Indexer::Event::Indexable);
 		};
 
-		class IndexQueryInfo;
-		HIDE_DECLARE_PTR(IndexQueryInfo);
+		class IndexQueryInfoBase;
+		HIDE_DECLARE_PTR(IndexQueryInfoBase);
 
+		class GenericIndexQueryInfo;
+		class FastIndexQueryInfo;
 		class IndexQuery;
 
-		class PartialIndexInfo;
+		struct PartialIndexInfo;
 		HIDE_DECLARE_PTR(PartialIndexInfo);
 
-		typedef std::queue<IndexQueryInfoPtr>							QueriesQueue;
+		typedef std::queue<IndexQueryInfoBasePtr>						QueriesQueue;
 		typedef std::queue<Event>										EventQueue;
 		typedef std::map<IIndexableIdPtr, PartialIndexInfoPtr, Less>	PartialIndexes;
+		typedef std::multimap<std::string, IIndexEntryPtr>				StringToIndexEntry;
 
 		class FilesListener;
 		HIDE_DECLARE_PTR(FilesListener);
@@ -65,6 +66,8 @@ namespace hide
 		EventQueue							_events;
 		ProjectFilesPtr						_files;
 		FilesListenerPtr					_filesListener;
+		StringToIndexEntry					_symbolNameToSymbol;
+		StringToIndexEntry					_fullSymbolNameToSymbol;
 		PartialIndexes						_partialIndexes;
 		std::thread							_thread;
 
@@ -78,14 +81,14 @@ namespace hide
 	private:
 		void ThreadFunc();
 
-		IIndexQueryPtr DoQuerySymbols(const std::function<bool(const IIndexEntryPtr&)>& checkEntryFunc);
+		IIndexQueryPtr DoQuerySymbols(const IndexQueryInfoBasePtr& queryInfo);
 
 		void AddIndexable(const IIndexablePtr& indexable);
 		void RemoveIndexable(const IIndexablePtr& indexable);
 		void RemoveOutdatedFiles();
 
-		void AddPartialIndex(const IIndexableIdPtr& indexableId, const PartialIndexInfoPtr& partialIndex);
-		void RemovePartialIndex(const IIndexableIdPtr& indexableId);
+		void AddPartialIndex(const IIndexableIdPtr& indexableId, const IPartialIndexPtr& index, const boost::filesystem::path& indexFilePath, const boost::filesystem::path& metaFilePath);
+		void RemovePartialIndex(PartialIndexes::iterator indexableIt);
 
 		static void DoRemoveFile(const boost::filesystem::path& filepath);
 		static boost::filesystem::path GetIndexFilePath(const IIndexablePtr& indexable);

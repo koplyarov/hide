@@ -25,6 +25,7 @@ namespace hide
 		std::string GetName() const		{ return _name; }
 		Location GetLocation() const	{ return _location; }
 	};
+	HIDE_DECLARE_ARRAY(IndexQueryEntry);
 
 
 	struct IIndexQueryListener
