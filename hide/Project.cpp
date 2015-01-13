@@ -55,7 +55,7 @@ namespace hide
 	IBuildSystemPtr Project::GetBuildSystem()
 	{
 		if (!_currentBuildSystem)
-			for (auto prober : _buildSystemProbers)
+			for (const auto& prober : _buildSystemProbers)
 			{
 				_currentBuildSystem = prober->Probe();
 				if (_currentBuildSystem)
@@ -90,7 +90,7 @@ namespace hide
 	{
 		using namespace boost::filesystem;
 
-		for (auto f : GetFiles())
+		for (const auto& f : GetFiles())
 		{
 			path p(filepath);
 			p.normalize();
@@ -136,7 +136,7 @@ namespace hide
 		}
 		else
 		{
-			for (auto lp : _langPlugins)
+			for (const auto& lp : _langPlugins)
 			{
 				IFilePtr f = lp->ProbeFile(p.string());
 
@@ -168,7 +168,7 @@ namespace hide
 				}
 				break;
 			case FileSystemNotifierTarget::Directory:
-				for (auto f : _files->GetFiles())
+				for (const auto& f : _files->GetFiles())
 				{
 					if (PathContains(path, f->GetFilename()))
 						_files->RemoveFile(f); // TODO: reimplement

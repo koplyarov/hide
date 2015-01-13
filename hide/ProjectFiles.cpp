@@ -29,7 +29,7 @@ namespace hide
 
 	void ProjectFiles::PopulateState(const IProjectFilesListenerPtr& listener) const
 	{
-		for (auto f : _files)
+		for (const auto& f : _files)
 			listener->OnFileAdded(f);
 	}
 

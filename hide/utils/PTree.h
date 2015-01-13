@@ -142,7 +142,7 @@ namespace hide
 			static void Write(boost::property_tree::ptree& t, const std::string& name, const T& val)
 			{
 				boost::property_tree::ptree child;
-				for (auto e : val)
+				for (const auto& e : val)
 					WriteToPTree(child, "", e);
 				t.push_back(std::make_pair(name, child));
 			}
@@ -153,7 +153,7 @@ namespace hide
 		{
 			static void Read(const boost::property_tree::ptree& t, const std::string& name, T& val)
 			{
-				for (auto e : t.get_child(name))
+				for (const auto& e : t.get_child(name))
 				{
 					typename T::value_type array_element;
 					ReadFromPTree(e.second, "", array_element);

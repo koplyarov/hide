@@ -73,7 +73,7 @@ namespace hide
 			if (!_currentBackend)
 			{
 				CMakeBuildConfigPtr config = GetCurrentBuildConfig();
-				for (auto prober : _backendProbers)
+				for (const auto& prober : _backendProbers)
 				{
 					_currentBackend = prober->Probe(config);
 					if (_currentBackend)

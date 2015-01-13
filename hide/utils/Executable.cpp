@@ -167,7 +167,7 @@ namespace hide
 			std::vector<char*> args;
 			args.reserve(parameters.size() + 1);
 			args.push_back(const_cast<char*>(executable.c_str()));
-			for (auto p : parameters)
+			for (const auto& p : parameters)
 				args.push_back(const_cast<char*>(p.c_str()));
 			args.push_back(nullptr);
 

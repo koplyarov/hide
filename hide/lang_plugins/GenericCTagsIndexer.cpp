@@ -169,7 +169,7 @@ namespace hide
 		PTreeReader(root).Read("entries", ctags_entries);
 
 		std::vector<IIndexEntryPtr> entries;
-		for (auto e : ctags_entries)
+		for (const auto& e : ctags_entries)
 			entries.push_back(std::make_shared<CTagsIndexEntry>(e.GetName(), e.GetScope(), Location(_filename, e.GetLocation().GetLine(), 1)));
 
 		return std::make_shared<CTagsPartialIndex>(entries);

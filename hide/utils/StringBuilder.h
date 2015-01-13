@@ -113,7 +113,7 @@ namespace hide
 			{
 				s << "[";
 				bool first = true;
-				for (auto e : val)
+				for (const auto& e : val)
 				{
 					s << (first ? " " : ", ");
 					WriteToStream(s, e);

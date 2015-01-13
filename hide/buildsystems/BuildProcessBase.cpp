@@ -22,7 +22,7 @@ namespace hide
 
 	void BuildProcessBase::PopulateState(const IBuildProcessListenerPtr& listener) const
 	{
-		for (auto l : _lines)
+		for (const auto& l : _lines)
 			listener->OnLine(l);
 		if (_status)
 			listener->OnFinished(*_status);

@@ -31,7 +31,7 @@ namespace hide
 		if (msg.GetLogLevel().GetRaw() < g_logLevel)
 			return;
 
-		for (auto s : g_loggerSinks)
+		for (const auto& s : g_loggerSinks)
 		{
 			try
 			{

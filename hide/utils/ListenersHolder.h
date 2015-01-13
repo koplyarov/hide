@@ -54,7 +54,7 @@ namespace hide
 		void InvokeListeners(const std::function<void(const ListenerTypePtr&)>& f) const
 		{
 			HIDE_LOCK(_mutex);
-			for (auto l : _listeners)
+			for (const auto& l : _listeners)
 			{
 				try
 				{ f(l); }
