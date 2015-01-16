@@ -24,7 +24,7 @@ namespace hide
 			try
 			{ threadFunc(); }
 			catch (const std::exception& ex)
-			{ s_logger.Error() << "Uncaught exception in thread function: " << boost::diagnostic_information(ex); }
+			{ s_logger.Error() << "Uncaught exception in thread function: " << ex; }
 		}
 	};
 

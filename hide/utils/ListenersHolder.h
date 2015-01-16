@@ -36,7 +36,7 @@ namespace hide
 			try
 			{ PopulateState(listener); }
 			catch (const std::exception& ex)
-			{ s_logger.Error() << "Uncaught exception in PopulateState for listener: " << boost::diagnostic_information(ex); }
+			{ s_logger.Error() << "Uncaught exception in PopulateState for listener: " << ex; }
 		}
 
 		virtual void RemoveListener(const ListenerTypePtr& listener)
@@ -59,7 +59,7 @@ namespace hide
 				try
 				{ f(l); }
 				catch (const std::exception& ex)
-				{ s_logger.Error() << "Uncaught exception in listener: " << boost::diagnostic_information(ex); }
+				{ s_logger.Error() << "Uncaught exception in listener: " << ex; }
 			}
 		}
 	};
