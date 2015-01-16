@@ -84,7 +84,17 @@ namespace hide
 		Class_() : _val(GetFirstVal()) { } \
 		Class_(Enum val) : _val(val) { } \
 		operator Enum () const { return GetRaw(); } \
-		Enum GetRaw() const { return _val; }
+		Enum GetRaw() const { return _val; } \
+		bool operator < (const Class_& other) const { return _val < other._val; } \
+		HIDE_COMPARISON_OPERATORS_FROM_LESS(Class_) \
+		bool operator == (const Enum& otherVal) const { return _val == otherVal; } \
+		bool operator != (const Enum& otherVal) const { return _val != otherVal; }
+
+
+#define HIDE_COMPARISON_OPERATORS_FROM_LESS(Class_) \
+		bool operator > (const Class_& other) const { return other < *this; } \
+		bool operator == (const Class_& other) const { return !(other < *this) && !(*this < other); } \
+		bool operator != (const Class_& other) const { return !(other == *this); }
 
 
 	class PureVirtualCallException : public std::runtime_error
