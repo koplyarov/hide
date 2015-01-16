@@ -149,7 +149,9 @@ function hide#SyntaxHighlight#SyncBufferHighlighters()
 endf
 
 function hide#SyntaxHighlight#EnableBufferSyntaxHighlighting()
-	let b:hideBufferHighlighter = s:BufferHighlighter()
+	if !exists('b:hideBufferHighlighter')
+		let b:hideBufferHighlighter = s:BufferHighlighter()
+	end
 endf
 
 function hide#SyntaxHighlight#DisableBufferSyntaxHighlighting()
