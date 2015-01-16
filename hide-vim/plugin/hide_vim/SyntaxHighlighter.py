@@ -8,22 +8,16 @@ class SyntaxHighlighterListener(hide.IContextUnawareSyntaxHighlighterListener):
         super(SyntaxHighlighterListener, self).__init__()
         self.__mutex = RLock()
         self.__words = {}
-        self.__modified = False
 
     def OnWordCategoryChanged(self, word, category):
         with self.__mutex:
-            self.__modified = True
-            if category != hide.WordCategory(hide.WordCategory.NoneCategory):
-                self.__words[word] = hide.WordCategory(category)
-            elif word in self.__words:
-                del self.__words[word]
+            self.__words[word] = hide.WordCategory(category)
 
-    def GetWordsIfModified(self):
+    def GetChangedWords(self):
         with self.__mutex:
-            if not self.__modified:
-                return None
-            self.__modified = False
-            return self.__words.copy()
+            words = self.__words
+            self.__words = {}
+            return words
 
 
 class SyntaxHighlighter:
@@ -35,8 +29,6 @@ class SyntaxHighlighter:
     def __del__(self):
         self.__highlighter.RemoveListener(self.__listener)
 
-    def GetWordsIfModifiedAsVimObj(self):
-        words = self.__listener.GetWordsIfModified()
-        if words is None:
-            return vim.eval('string(g:hide#Utils#null)')
+    def GetChangedWordsAsVimDictionary(self):
+        words = self.__listener.GetChangedWords()
         return "{" + ",".join([ "'" + w + "':'" + words[w].ToString() + "'" for w in words ]) + "}"

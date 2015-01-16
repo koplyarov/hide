@@ -6,8 +6,8 @@ if !exists('s:BufferHighlighterPrototype')
 		python hidePlugin.CreateSyntaxHighlighter(vim.eval('self._filename'))
 		let self._autocmdGroup = 'HideBufferHighlighter_'.bufnr('')
 		exec 'augroup '.self._autocmdGroup
-		exec 'au '.self._autocmdGroup.' BufWinEnter <buffer> call b:hideBufferHighlighter._BufWinEnterHandler()'
-		exec 'au '.self._autocmdGroup.' BufWinLeave <buffer> if exists("b:hideBufferHighlighter") | call b:hideBufferHighlighter._BufWinLeaveHandler() | end'
+		"exec 'au '.self._autocmdGroup.' BufWinEnter <buffer> call b:hideBufferHighlighter._BufWinEnterHandler()'
+		"exec 'au '.self._autocmdGroup.' BufWinLeave <buffer> if exists("b:hideBufferHighlighter") | call b:hideBufferHighlighter._BufWinLeaveHandler() | end'
 		call self.Sync()
 		call self._BufWinEnterHandler()
 	endf
@@ -49,8 +49,48 @@ if !exists('s:BufferHighlighterPrototype')
 	function s:BufferHighlighterPrototype._SetHighlightsInCurWindow()
 		call self._ResetHighlightsInCurWindow()
 
-		for w in keys(self._words)
-			exec 'syn keyword HideHighlight'.self._words[w].' '.w
+		call self._AddHighlights(self._words)
+	endf
+
+	function s:BufferHighlighterPrototype._AddHighlights(words)
+		let banned_words = ['contains', 'oneline', 'fold', 'display', 'extend concealends']
+
+		let categories = {}
+		for w in keys(a:words)
+			let cat = a:words[w]
+			if !has_key(categories, cat)
+				let categories[cat] = [ w ]
+			else
+				call add(categories[cat], w)
+			end
+		endfor
+
+		for c in keys(categories)
+			let syntax_cmd = 'syn keyword HideHighlight'.c
+			let category_words = categories[c]
+			for w in category_words
+				if index(banned_words, tolower(w)) != -1
+					if tolower(w) != 'concealends'
+						exec 'syn match '.c.' /\<'.w.'\>/'
+					end
+					continue
+				end
+
+				if len(syntax_cmd) + len(' '.w) >= 512
+					try
+						exec syntax_cmd
+					catch
+						call hide#Utils#Log('BufferHighlighter', 'Error', 'exec failed ('.v:exception.'): '.syntax_cmd)
+					endtry
+					let syntax_cmd = 'syn keyword HideHighlight'.c
+				end
+				let syntax_cmd .= ' '.w
+			endfor
+			try
+				exec syntax_cmd
+			catch
+				call hide#Utils#Log('BufferHighlighter', 'Error', 'exec failed ('.v:exception.'): '.syntax_cmd)
+			endtry
 		endfor
 	endf
 
@@ -59,14 +99,30 @@ if !exists('s:BufferHighlighterPrototype')
 	endf
 
 	function s:BufferHighlighterPrototype.Sync()
-		python vim.command('let l:words = ' + hidePlugin.GetSyntaxHighlighter(vim.eval('self._filename')).GetWordsIfModifiedAsVimObj())
+		python vim.command('let l:words = ' + hidePlugin.GetSyntaxHighlighter(vim.eval('self._filename')).GetChangedWordsAsVimDictionary())
 
-		if hide#Utils#IsNull(words)
-			return
+		let added_words = filter(copy(words), 'words[v:key] != "NoneCategory"')
+		let removed_words = filter(copy(words), 'words[v:key] == "NoneCategory"')
+
+		let reset_highlights = !empty(removed_words)
+
+		for w in keys(removed_words)
+			if has_key(self._words, w)
+				unlet self._words[w]
+			end
+		endfor
+
+		for w in keys(added_words)
+			let self._words[w] = added_words[w]
+		endfor
+
+		if !reset_highlights
+			call self._AddHighlights(added_words)
 		end
 
-		let self._words = words
-		call self._SetHighlightsInCurWindow()
+		if reset_highlights
+			call self._SetHighlightsInCurWindow()
+		end
 	endf
 
 	function s:BufferHighlighterPrototype.Sync_static()
