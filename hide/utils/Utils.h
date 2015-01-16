@@ -54,6 +54,7 @@ namespace hide
 	}
 
 #define DETAIL_HIDE_ENUM_TO_STRING_CASE(R_, Data_, Elem_) case Elem_: return BOOST_PP_STRINGIZE(Elem_);
+#define DETAIL_HIDE_ENUM_FROM_STRING_IF(R_, Data_, Elem_) if (str == BOOST_PP_STRINGIZE(Elem_)) return Elem_;
 #define HIDE_ENUM_VALUES(...) \
 	public: \
 		enum Enum { __VA_ARGS__ }; \
@@ -68,6 +69,11 @@ namespace hide
 				BOOST_PP_SEQ_FOR_EACH(DETAIL_HIDE_ENUM_TO_STRING_CASE, ~, BOOST_PP_TUPLE_TO_SEQ((__VA_ARGS__))) \
 			default: return GetClassName() + "(" + std::to_string(_val) + ")"; \
 			} \
+		} \
+		static Enum FromString(const std::string& str) \
+		{ \
+			BOOST_PP_SEQ_FOR_EACH(DETAIL_HIDE_ENUM_FROM_STRING_IF, ~, BOOST_PP_TUPLE_TO_SEQ((__VA_ARGS__))) \
+			BOOST_THROW_EXCEPTION(std::runtime_error("Could not parse " + GetClassName() + " value: " + str)); \
 		}
 
 #define HIDE_ENUM_CLASS(Class_) \
