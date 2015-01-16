@@ -13,13 +13,15 @@ namespace hide
 	{
 		struct ObjectType
 		{
-			HIDE_ENUM_VALUES( HasReadWrite, HasVisitMembers, Collection, Other);
+			HIDE_ENUM_VALUES( HasReadWrite, HasVisitMembers, HasToAndFromString, Collection, Other);
 			HIDE_ENUM_CLASS(ObjectType);
 		};
 
 		HIDE_DECLARE_METHOD_CHECK(VisitMembers);
 		HIDE_DECLARE_METHOD_CHECK(WriteToPTree);
 		HIDE_DECLARE_METHOD_CHECK(ReadFromPTree);
+		HIDE_DECLARE_METHOD_CHECK(ToString);
+		HIDE_DECLARE_METHOD_CHECK(FromString);
 		HIDE_DECLARE_METHOD_CHECK(begin);
 		HIDE_DECLARE_METHOD_CHECK(end);
 
@@ -29,8 +31,9 @@ namespace hide
 			static const ObjectType::Enum Value =
 				HasMethod_WriteToPTree<T>::Value && HasMethod_ReadFromPTree<T>::Value ? ObjectType::HasReadWrite :
 					(HasMethod_VisitMembers<T>::Value ? ObjectType::HasVisitMembers :
-						(HasMethod_begin<T>::Value && HasMethod_end<T>::Value ? ObjectType::Collection :
-							ObjectType::Other));
+						(HasMethod_ToString<T>::Value && HasMethod_FromString<T>::Value ? ObjectType::HasToAndFromString :
+							(HasMethod_begin<T>::Value && HasMethod_end<T>::Value ? ObjectType::Collection :
+								ObjectType::Other)));
 		};
 
 
@@ -72,6 +75,24 @@ namespace hide
 		{
 			static void Read(const boost::property_tree::ptree& t, const std::string& name, T& val)
 			{ val.ReadFromPTree(t.get_child(name)); }
+		};
+
+		template < typename T >
+		struct Writer<T, ObjectType::HasToAndFromString>
+		{
+			static void Write(boost::property_tree::ptree& t, const std::string& name, const T& val)
+			{ WriteToPTree(t, name, val.ToString()); }
+		};
+
+		template < typename T >
+		struct Reader<T, ObjectType::HasToAndFromString>
+		{
+			static void Read(const boost::property_tree::ptree& t, const std::string& name, T& val)
+			{
+				std::string s;
+				ReadFromPTree(t, name, s);
+				val = T::FromString(s);
+			}
 		};
 
 		class PTreeWriteVisitor
