@@ -18,15 +18,27 @@
 namespace hide
 {
 
-	class Indexer
+	struct IIndexerListener
+	{
+		virtual ~IIndexerListener() { }
+
+		virtual void OnEntryAdded(const IIndexEntryPtr& entry)		{ HIDE_PURE_VIRTUAL_CALL(); }
+		virtual void OnEntryRemoved(const IIndexEntryPtr& entry)	{ HIDE_PURE_VIRTUAL_CALL(); }
+	};
+	HIDE_DECLARE_PTR(IIndexerListener);
+
+
+	class Indexer : private ListenersHolder<IIndexerListener>
 	{
 		HIDE_NONCOPYABLE(Indexer);
+
+		typedef ListenersHolder<IIndexerListener> ListenersHolderBase;
 
 		friend class TestIndexQuery;
 
 		struct EventType
 		{
-			HIDE_ENUM_VALUES(IndexableAdded, IndexableRemoved, RemoveOutdatedFiles);
+			HIDE_ENUM_VALUES(IndexableAdded, IndexableRemoved, IndexableModified, RemoveOutdatedFiles);
 			HIDE_ENUM_CLASS(EventType);
 		};
 
@@ -78,17 +90,19 @@ namespace hide
 		IIndexQueryPtr QuerySymbolsBySubstring(const std::string& str);
 		IIndexQueryPtr QuerySymbolsByName(const std::string& symbolName);
 
+		virtual void AddListener(const IIndexerListenerPtr& listener)		{ ListenersHolderBase::AddListener(listener); }
+		virtual void RemoveListener(const IIndexerListenerPtr& listener)	{ ListenersHolderBase::RemoveListener(listener); }
+
+	protected:
+		virtual void PopulateState(const IIndexerListenerPtr& listener) const;
+
 	private:
 		void ThreadFunc();
 
 		IIndexQueryPtr DoQuerySymbols(const IndexQueryInfoBasePtr& queryInfo);
 
-		void AddIndexable(const IIndexablePtr& indexable);
-		void RemoveIndexable(const IIndexablePtr& indexable);
+		void ProcessIndexableEvent(const Event& e);
 		void RemoveOutdatedFiles();
-
-		void AddPartialIndex(const IIndexableIdPtr& indexableId, const IPartialIndexPtr& index, const boost::filesystem::path& indexFilePath, const boost::filesystem::path& metaFilePath);
-		void RemovePartialIndex(PartialIndexes::iterator indexableIt);
 
 		static void DoRemoveFile(const boost::filesystem::path& filepath);
 		static boost::filesystem::path GetIndexFilePath(const IIndexablePtr& indexable);

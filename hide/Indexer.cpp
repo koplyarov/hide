@@ -1,7 +1,10 @@
 #include <hide/Indexer.h>
 
+#include <set>
+
 #include <boost/filesystem.hpp>
 #include <boost/property_tree/json_parser.hpp>
+#include <boost/range/algorithm.hpp>
 #include <boost/scope_exit.hpp>
 
 #include <hide/utils/ListenersHolder.h>
@@ -38,8 +41,9 @@ namespace hide
 
 		virtual void OnFileModified(const IFilePtr& file)
 		{
-			OnFileRemoved(file);
-			OnFileAdded(file);
+			HIDE_LOCK(_inst->_mutex);
+			_inst->_events.push(Event{EventType::IndexableModified, file});
+			_inst->_condVar.notify_all();
 		}
 	};
 
@@ -250,6 +254,13 @@ namespace hide
 	}
 
 
+	void Indexer::PopulateState(const IIndexerListenerPtr& listener) const
+	{
+		for (const auto& s_pair : _symbolNameToSymbol)
+			listener->OnEntryAdded(s_pair.second);
+	}
+
+
 	void Indexer::ThreadFunc()
 	{
 		std::unique_lock<std::mutex> l(_mutex);
@@ -262,13 +273,14 @@ namespace hide
 			if (!scanning_indexes && !_events.empty())
 			{
 				scanning_indexes = true;
-				s_logger.Info() << "Scanning indexes...";
+				s_logger.Debug() << "Scanning indexes...";
 				scan_profiler.Reset();
 			}
 			else if (scanning_indexes && _events.empty())
 			{
 				scanning_indexes = false;
-				s_logger.Info() << "Finished scanning indexes: " << scan_profiler.Reset();
+				auto scan_duration = scan_profiler.Reset();
+				(scan_duration > std::chrono::seconds(1) ? s_logger.Info() : s_logger.Debug()) << "Finished scanning indexes: " << scan_duration;
 			}
 
 			if (_events.empty() && _queries.empty())
@@ -290,10 +302,9 @@ namespace hide
 					switch (e.Type.GetRaw())
 					{
 					case EventType::IndexableAdded:
-						AddIndexable(e.Indexable);
-						break;
 					case EventType::IndexableRemoved:
-						RemoveIndexable(e.Indexable);
+					case EventType::IndexableModified:
+						ProcessIndexableEvent(e);
 						break;
 					case EventType::RemoveOutdatedFiles:
 						RemoveOutdatedFiles();
@@ -311,6 +322,7 @@ namespace hide
 				try
 				{
 					Profiler<> query_profiler;
+					HIDE_LOCK(GetMutex());
 					q->Process(this);
 					Indexer::s_logger.Warning() << "Query processing time: " << query_profiler.Reset();
 				}
@@ -330,68 +342,114 @@ namespace hide
 	}
 
 
-	void Indexer::AddIndexable(const IIndexablePtr& indexable)
+	void Indexer::ProcessIndexableEvent(const Event& e)
 	{
 		using namespace boost::filesystem;
+
+		IIndexablePtr indexable = e.Indexable;
 
 		IIndexableIdPtr id = indexable->GetIndexableId();
 
 		path index_file = GetIndexFilePath(indexable);
 		path meta_file = GetMetaFilePath(indexable);
 
-		if (is_regular_file(meta_file))
+		IPartialIndexPtr index;
+
+		if (e.Type == EventType::IndexableAdded || e.Type == EventType::IndexableModified)
 		{
-			PartialIndexMetaInfo old_meta_info;
-			try
+			if (is_regular_file(meta_file))
 			{
-				old_meta_info = PartialIndexMetaInfo::LoadFromFile(meta_file);
-
-				if (old_meta_info.ModificationTime == indexable->GetModificationTime() && is_regular_file(index_file))
+				PartialIndexMetaInfo old_meta_info;
+				try
 				{
-					try
+					old_meta_info = PartialIndexMetaInfo::LoadFromFile(meta_file);
+
+					if (old_meta_info.ModificationTime == indexable->GetModificationTime() && is_regular_file(index_file))
 					{
-						s_logger.Debug() << "Loading " << indexable << " index from " << index_file;
-						IPartialIndexPtr index = indexable->GetIndexer()->LoadIndex(index_file.string());
+						try
 						{
-							HIDE_LOCK(_mutex);
-							AddPartialIndex(id, index, index_file, meta_file);
+							s_logger.Debug() << "Loading " << indexable << " index from " << index_file;
+							index = indexable->GetIndexer()->LoadIndex(index_file.string());
 						}
-						return;
+						catch (const std::exception& ex)
+						{ s_logger.Warning() << "Cannot load " << indexable << " index: " << ex; }
 					}
-					catch (const std::exception& ex)
-					{ s_logger.Warning() << "Cannot load " << indexable << " index: " << boost::diagnostic_information(ex); }
 				}
+				catch (const std::exception& ex)
+				{ s_logger.Warning() << "Cannot read " << indexable << " metainfo: " << ex; }
 			}
-			catch (const std::exception& ex)
-			{ s_logger.Warning() << "Cannot read " << indexable << " metainfo: " << boost::diagnostic_information(ex); }
+
+			if (!index)
+			{
+				s_logger.Debug() << "Building " << indexable << " index";
+				index = indexable->GetIndexer()->BuildIndex();
+
+				s_logger.Debug() << "Saving " << indexable << " index to " << index_file;
+				boost::filesystem::create_directories(index_file.parent_path());
+				index->Save(index_file.string());
+				PartialIndexMetaInfo{indexable->GetModificationTime()}.SaveToFile(meta_file);
+			}
 		}
 
-		s_logger.Info() << "Building " << indexable << " index";
-		IPartialIndexPtr index = indexable->GetIndexer()->BuildIndex();
+		typedef std::set<IIndexEntryPtr, Less>	IndexEntriesSet;
+		IndexEntriesSet old_entries;
+		IndexEntriesSet new_entries;
+
+		HIDE_LOCK(GetMutex());
+
+		if (e.Type == EventType::IndexableRemoved || e.Type == EventType::IndexableModified)
 		{
-			HIDE_LOCK(_mutex);
-			AddPartialIndex(id, index, index_file, meta_file);
+
+			IIndexableIdPtr id = indexable->GetIndexableId();
+			auto indexable_it = _partialIndexes.find(id);
+			if (indexable_it == _partialIndexes.end())
+				return;
+
+			DoRemoveFile(indexable_it->second->IndexFilePath);
+			DoRemoveFile(indexable_it->second->MetaFilePath);
+
+			for (auto it : indexable_it->second->SymbolNameToSymbolIterators)
+			{
+				old_entries.insert(it->second);
+				_symbolNameToSymbol.erase(it);
+			}
+
+			for (auto it : indexable_it->second->FullSymbolNameToSymbolIterators)
+				_fullSymbolNameToSymbol.erase(it);
+
+			_partialIndexes.erase(indexable_it);
+		}
+		if (e.Type == EventType::IndexableAdded || e.Type == EventType::IndexableModified)
+		{
+			PartialIndexInfo::StringToIndexEntryIterators symbol_name_to_symbol_iterators;
+			PartialIndexInfo::StringToIndexEntryIterators full_symbol_name_to_symbol_iterators;
+
+			IIndexEntryPtrArray entries = index->GetEntries();
+			symbol_name_to_symbol_iterators.reserve(entries.size());
+			full_symbol_name_to_symbol_iterators.reserve(entries.size());
+
+			for (const auto& e : entries)
+			{
+				symbol_name_to_symbol_iterators.push_back(_symbolNameToSymbol.insert(std::make_pair(e->GetName(), e)));
+				new_entries.insert(e);
+				full_symbol_name_to_symbol_iterators.push_back(_fullSymbolNameToSymbol.insert(std::make_pair(e->GetFullName(), e)));
+			}
+
+			PartialIndexInfoPtr index_info(new PartialIndexInfo{index, index_file, meta_file, std::move(symbol_name_to_symbol_iterators), std::move(full_symbol_name_to_symbol_iterators)});
+			_partialIndexes.insert(std::make_pair(id, index_info));
 		}
 
-		s_logger.Debug() << "Saving " << indexable << " index to " << index_file;
-		boost::filesystem::create_directories(index_file.parent_path());
-		index->Save(index_file.string());
-		PartialIndexMetaInfo{indexable->GetModificationTime()}.SaveToFile(meta_file);
-	}
+		IndexEntriesSet added_entries;
+		IndexEntriesSet removed_entries;
 
+		boost::set_difference(old_entries, new_entries, std::inserter(removed_entries, removed_entries.begin()), Less());
+		boost::set_difference(new_entries, old_entries, std::inserter(added_entries, added_entries.begin()), Less());
 
-	void Indexer::RemoveIndexable(const IIndexablePtr& indexable)
-	{
-		using namespace boost::filesystem;
+		for (const auto& e : removed_entries)
+			InvokeListeners(std::bind(&IIndexerListener::OnEntryRemoved, std::placeholders::_1, e));
 
-		IIndexableIdPtr id = indexable->GetIndexableId();
-		auto it = _partialIndexes.find(id);
-		if (it == _partialIndexes.end())
-			return;
-
-		DoRemoveFile(it->second->IndexFilePath);
-		DoRemoveFile(it->second->MetaFilePath);
-		RemovePartialIndex(it);
+		for (const auto& e : added_entries)
+			InvokeListeners(std::bind(&IIndexerListener::OnEntryAdded, std::placeholders::_1, e));
 	}
 
 
@@ -400,9 +458,9 @@ namespace hide
 		using namespace boost::filesystem;
 
 		Profiler<> profiler;
-		s_logger.Info() << "RemoveOutdatedFiles()";
+		s_logger.Debug() << "RemoveOutdatedFiles()";
 
-		HIDE_LOCK(_mutex);
+		HIDE_LOCK(GetMutex());
 		std::set<path> good_files;
 		for (const auto& pi : _partialIndexes)
 		{
@@ -430,38 +488,6 @@ namespace hide
 		s_logger.Info() << "RemoveOutdatedFiles finished: " << profiler.Reset();
 
 		scan_func(s_indexDirectory);
-	}
-
-
-	void Indexer::AddPartialIndex(const IIndexableIdPtr& indexableId, const IPartialIndexPtr& index, const boost::filesystem::path& indexFilePath, const boost::filesystem::path& metaFilePath)
-	{
-		PartialIndexInfo::StringToIndexEntryIterators symbol_name_to_symbol_iterators;
-		PartialIndexInfo::StringToIndexEntryIterators full_symbol_name_to_symbol_iterators;
-
-		IIndexEntryPtrArray entries = index->GetEntries();
-		symbol_name_to_symbol_iterators.reserve(entries.size());
-		full_symbol_name_to_symbol_iterators.reserve(entries.size());
-
-		for (const auto& e : entries)
-		{
-			symbol_name_to_symbol_iterators.push_back(_symbolNameToSymbol.insert(std::make_pair(e->GetName(), e)));
-			full_symbol_name_to_symbol_iterators.push_back(_fullSymbolNameToSymbol.insert(std::make_pair(e->GetFullName(), e)));
-		}
-
-		PartialIndexInfoPtr index_info(new PartialIndexInfo{index, indexFilePath, metaFilePath, std::move(symbol_name_to_symbol_iterators), std::move(full_symbol_name_to_symbol_iterators)});
-		_partialIndexes.insert(std::make_pair(indexableId, index_info));
-	}
-
-
-	void Indexer::RemovePartialIndex(PartialIndexes::iterator indexableIt)
-	{
-		for (auto it : indexableIt->second->SymbolNameToSymbolIterators)
-			_symbolNameToSymbol.erase(it);
-
-		for (auto it : indexableIt->second->FullSymbolNameToSymbolIterators)
-			_fullSymbolNameToSymbol.erase(it);
-
-		_partialIndexes.erase(indexableIt);
 	}
 
 
