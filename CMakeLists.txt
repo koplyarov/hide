@@ -34,6 +34,7 @@ add_definitions(-DHIDE_PLATFORM_POSIX=1) # TODO: implement platform detection
 
 set(hide_SRCS
 	hide/Buffer.cpp
+	hide/ContextUnawareSyntaxHighlighter.cpp
 	hide/Indexer.cpp
 	hide/Project.cpp
 	hide/ProjectFiles.cpp

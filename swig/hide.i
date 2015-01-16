@@ -93,8 +93,16 @@ using namespace hide;
 %shared_ptr(hide::IIndexQuery)
 %include <hide/IIndexQuery.h>
 
+%feature("director") hide::IIndexerListener;
+%shared_ptr(hide::IIndexerListener)
 %shared_ptr(hide::Indexer)
 %include <hide/Indexer.h>
+
+%feature("director") hide::IContextUnawareSyntaxHighlighterListener;
+%shared_ptr(hide::IContextUnawareSyntaxHighlighterListener)
+%shared_ptr(hide::ContextUnawareSyntaxHighlighter)
+%copyctor hide::WordCategory;
+%include <hide/ContextUnawareSyntaxHighlighter.h>
 
 %shared_ptr(hide::Buffer)
 %include <hide/Buffer.h>

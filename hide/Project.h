@@ -9,6 +9,7 @@
 #include <boost/regex.hpp>
 
 #include <hide/Buffer.h>
+#include <hide/ContextUnawareSyntaxHighlighter.h>
 #include <hide/IBuildSystem.h>
 #include <hide/ILanguagePlugin.h>
 #include <hide/Indexer.h>
@@ -37,19 +38,19 @@ namespace hide
 		typedef std::vector<boost::regex>			RegexesVector;
 
 	private:
-		static NamedLogger				s_logger;
+		static NamedLogger					s_logger;
 
+		RegexesVector						_skipList;
+		IBuildSystemProberPtrArray			_buildSystemProbers;
+		ILanguagePluginPtrArray				_langPlugins;
+		IBuildSystemPtr						_currentBuildSystem;
+		ProjectFilesPtr						_files;
+		IFileSysterNotifierListenerPtr		_fsNotifierListener;
+		FileSystemNotifierPtr				_fsNotifier;
 
-		RegexesVector					_skipList;
-		IBuildSystemProberPtrArray		_buildSystemProbers;
-		ILanguagePluginPtrArray			_langPlugins;
-		IBuildSystemPtr					_currentBuildSystem;
-		ProjectFilesPtr					_files;
-		IFileSysterNotifierListenerPtr	_fsNotifierListener;
-		FileSystemNotifierPtr			_fsNotifier;
-
-		BuffersMap						_buffers;
-		IndexerPtr						_indexer;
+		BuffersMap							_buffers;
+		IndexerPtr							_indexer;
+		ContextUnawareSyntaxHighlighterPtr	_contextUnawareSyntaxHighlighter;
 
 	public:
 		Project(const RegexesVector& skipList);
@@ -57,6 +58,7 @@ namespace hide
 
 		IBuildSystemPtr GetBuildSystem();
 		IndexerPtr GetIndexer();
+		ContextUnawareSyntaxHighlighterPtr GetContextUnawareSyntaxHighlighter();
 
 		void AddBuffer(const BufferPtr& buffer);
 		void RemoveBuffer(const std::string& bufferName);

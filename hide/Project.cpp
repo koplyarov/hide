@@ -75,6 +75,14 @@ namespace hide
 	}
 
 
+	ContextUnawareSyntaxHighlighterPtr Project::GetContextUnawareSyntaxHighlighter()
+	{
+		if (!_contextUnawareSyntaxHighlighter)
+			_contextUnawareSyntaxHighlighter.reset(new ContextUnawareSyntaxHighlighter(GetIndexer()));
+		return _contextUnawareSyntaxHighlighter;
+	}
+
+
     void Project::AddBuffer(const BufferPtr& buffer)
     {
 		std::string name = buffer->GetName();

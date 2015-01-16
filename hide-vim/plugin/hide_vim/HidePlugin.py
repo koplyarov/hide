@@ -6,6 +6,7 @@ from BuildProcessListener import *
 from IndexQueryListener import *
 from LoggerSink import *
 from Model import *
+from SyntaxHighlighter import *
 
 
 class HidePlugin:
@@ -27,11 +28,24 @@ class HidePlugin:
         self.__indexQuery = None
         self.__indexQueryListener = None
 
+        self.__syntaxHighlighters = {}
+
         self.project = hide.Project.CreateAuto(['^(.*/)?\\bCMakeFiles\\b(/.*)?$', '^(.*/)?\\.git\\b(/.*)?$'])
 
     def __del__(self):
         self.InterruptBuild()
         hide.Logger.RemoveSink(self.loggerSink)
+
+    def CreateSyntaxHighlighter(self, filename):
+        self.logger.Log(hide.LogLevel.Debug, 'CreateSyntaxHighlighter(' + filename + ')')
+        self.__syntaxHighlighters[filename] = SyntaxHighlighter(self.project.GetContextUnawareSyntaxHighlighter())
+
+    def GetSyntaxHighlighter(self, filename):
+        return self.__syntaxHighlighters[filename]
+
+    def DeleteSyntaxHighlighter(self, filename):
+        self.logger.Log(hide.LogLevel.Debug, 'DeleteSyntaxHighlighter(' + filename + ')')
+        del self.__syntaxHighlighters[filename]
 
     def GetBuildTargets(self):
         return self.project.GetBuildSystem().GetTargets()
