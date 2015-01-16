@@ -140,28 +140,14 @@ function hide#Buffer#Buffer(bufInfo)
 			endtry
 		endf
 
+		function s:BufferPrototype._ForEachMyWindowFuncInvoker(func, ...)
+			if bufnr('') == self.bufNum
+				call call(a:func, a:000, self)
+			end
+		endf
+
 		function s:BufferPrototype._ForEachMyWindow(func, ...)
-			let oldEventignore = &eventignore
-			let currentTab = tabpagenr()
-			try
-				for i in range(1, tabpagenr('$'))
-					exec 'tabnext '.i
-					let tabWin = winnr()
-					try
-						for j in range(1, winnr('$'))
-							exec j.'wincmd w'
-							if bufnr('') == self.bufNum
-								call call(a:func, a:000, self)
-							end
-						endfor
-					finally
-						exec tabWin.'wincmd w'
-					endtry
-				endfor
-			finally
-				exec 'tabnext '.currentTab
-				let &ei = oldEventignore
-			endtry
+			call hide#Utils#ForEachWindow(self._ForEachMyWindowFuncInvoker, [a:func] + a:000, self)
 		endf
 	end
 

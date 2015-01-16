@@ -60,3 +60,31 @@ endf
 
 autocmd CursorHold * call <SID>TimerTick()
 autocmd CursorHoldI * call <SID>TimerTickI()
+
+
+
+function hide#Utils#ForEachWindow(func, args, ...)
+	let oldEventignore = &eventignore
+	let currentTab = tabpagenr()
+	try
+		for i in range(1, tabpagenr('$'))
+			exec 'tabnext '.i
+			let tabWin = winnr()
+			try
+				for j in range(1, winnr('$'))
+					exec j.'wincmd w'
+					if a:0 == 1
+						call call(a:func, a:args, a:1)
+					else
+						call call(a:func, a:args)
+					end
+				endfor
+			finally
+				exec tabWin.'wincmd w'
+			endtry
+		endfor
+	finally
+		exec 'tabnext '.currentTab
+		let &ei = oldEventignore
+	endtry
+endf
