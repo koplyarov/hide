@@ -5,18 +5,30 @@
 #include <string>
 
 #include <hide/Location.h>
+#include <hide/utils/IComparable.h>
+#include <hide/utils/StringBuilder.h>
 #include <hide/utils/Utils.h>
 
 
 namespace hide
 {
 
-	struct IIndexEntry
+	struct IndexEntryKind
+	{
+		HIDE_ENUM_VALUES(NamedConstant, Variable, Function, Type);
+		HIDE_ENUM_CLASS(IndexEntryKind);
+
+		HIDE_DECLARE_SWIG_TO_STRING_WRAPPER();
+	};
+
+
+	struct IIndexEntry : public virtual IComparable
 	{
 		virtual ~IIndexEntry() { }
 
 		virtual std::string GetName() const { HIDE_PURE_VIRTUAL_CALL(); }
 		virtual std::string GetFullName() const { HIDE_PURE_VIRTUAL_CALL(); }
+		virtual IndexEntryKind GetKind() const { HIDE_PURE_VIRTUAL_CALL(); }
 		virtual Location GetLocation() const { HIDE_PURE_VIRTUAL_CALL(); }
 
 		virtual std::string ToString() const { return GetName(); }
