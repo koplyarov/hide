@@ -66,6 +66,13 @@ namespace hide
 	}}
 
 
+	struct Cmp
+	{
+		template < typename T >
+		int operator () (const T& l, const T& r) const
+		{ return Detail::Comparers::InvokeCompare(l, r); }
+	};
+
 	struct Less
 	{
 		template < typename T >
