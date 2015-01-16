@@ -193,7 +193,7 @@ namespace hide
 		s_logger.Debug() << "Executable::Interrupt()";
 #if HIDE_PLATFORM_POSIX
 		// TODO: suppress repeated Interrupt calls
-		int ret = kill(_pid, SIGINT);
+		int ret = kill(_pid, SIGTERM);
 		if (ret != 0)
 		{
 			if (errno == ESRCH)
