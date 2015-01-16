@@ -1,5 +1,6 @@
-function hide#Utils#Log(logLevel, text)
-	execute 'python hidePlugin.logger.Log(hide.LogLevel.'.a:logLevel.', "'.string(a:text).'")'
+function hide#Utils#Log(category, logLevel, text)
+	let log_message_text = (type(a:text) == type('') ? a:text : string(a:text))
+	execute 'python hidePlugin.logger.Log(hide.LogLevel.'.a:logLevel.', "'.log_message_text.'")'
 endf
 
 let g:hide#Utils#null = { '___null___': '' }
