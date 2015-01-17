@@ -6,8 +6,7 @@ if !exists('s:BufferHighlighterPrototype')
 		python hidePlugin.CreateSyntaxHighlighter(vim.eval('self._filename'))
 		let self._autocmdGroup = 'HideBufferHighlighter_'.bufnr('')
 		exec 'augroup '.self._autocmdGroup
-		"exec 'au '.self._autocmdGroup.' BufWinEnter <buffer> call b:hideBufferHighlighter._BufWinEnterHandler()'
-		"exec 'au '.self._autocmdGroup.' BufWinLeave <buffer> if exists("b:hideBufferHighlighter") | call b:hideBufferHighlighter._BufWinLeaveHandler() | end'
+		exec 'au '.self._autocmdGroup.' BufWinEnter <buffer> call b:hideBufferHighlighter.Sync()'
 		call self._LinkHighlights()
 		call self.Sync()
 	endf
