@@ -6,9 +6,10 @@ if !exists('s:BufferHighlighterPrototype')
 		python hidePlugin.CreateSyntaxHighlighter(vim.eval('self._filename'))
 		let self._autocmdGroup = 'HideBufferHighlighter_'.bufnr('')
 		exec 'augroup '.self._autocmdGroup
-		exec 'au '.self._autocmdGroup.' BufWinEnter <buffer> call b:hideBufferHighlighter.Sync()'
+		exec 'au '.self._autocmdGroup.' BufWinEnter <buffer> call b:hideBufferHighlighter.Sync(0)'
+		exec 'au '.self._autocmdGroup.' BufReadPost <buffer> call b:hideBufferHighlighter.Sync(1)'
 		call self._LinkHighlights()
-		call self.Sync()
+		call self.Sync(1)
 	endf
 
 	function s:BufferHighlighterPrototype.Deinit()
@@ -39,13 +40,13 @@ if !exists('s:BufferHighlighterPrototype')
 		silent! syntax clear HideHighlightNamedConstant HideHighlightVariable HideHighlightFunction HideHighlightType HideHighlightKeyword
 	endf
 
-	function s:BufferHighlighterPrototype.Sync()
-		python hidePlugin.GetSyntaxHighlighter(vim.eval('self._filename')).UpdateHighlights()
+	function s:BufferHighlighterPrototype.Sync(forceFullUpdate)
+		python hidePlugin.GetSyntaxHighlighter(vim.eval('self._filename')).UpdateHighlights(int(vim.eval('a:forceFullUpdate')))
 	endf
 
 	function s:BufferHighlighterPrototype.Sync_static()
 		if exists('b:hideBufferHighlighter')
-			call b:hideBufferHighlighter.Sync()
+			call b:hideBufferHighlighter.Sync(0)
 		end
 	endf
 end

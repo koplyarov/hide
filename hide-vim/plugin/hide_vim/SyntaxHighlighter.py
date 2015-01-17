@@ -34,9 +34,9 @@ class SyntaxHighlighter:
     def __del__(self):
         self.__highlighter.RemoveListener(self.__listener)
 
-    def UpdateHighlights(self):
+    def UpdateHighlights(self, forceFullUpdate):
         words = self.__listener.GetChangedWords()
-        if not words:
+        if not words and not forceFullUpdate:
             return
 
         added_words = { word: category for (word, category) in words.iteritems() if category != "NoneCategory" }
@@ -47,7 +47,7 @@ class SyntaxHighlighter:
 
         self.__words.update(added_words)
 
-        if not removed_words:
+        if not removed_words and not forceFullUpdate:
             self.__AddHighlights(added_words)
         else:
             self.__SetHighlights()
