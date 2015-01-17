@@ -2,6 +2,8 @@
 
 #include <iterator>
 
+#include <hide/utils/Profiler.h>
+
 
 namespace hide
 {
@@ -56,13 +58,15 @@ namespace hide
 
 	void ContextUnawareSyntaxHighlighter::PopulateState(const IContextUnawareSyntaxHighlighterListenerPtr& listener) const
 	{
+		Profiler<> profiler;
 		for (const auto& wi : _wordsInfo)
 		{
 			if (wi.second.empty() || wi.second.rbegin()->second <= 0)
 				continue;
 
-			listener->OnWordCategoryChanged(wi.first, wi.second.rbegin()->first);
+			listener->OnWordCategoryChanged(wi.first, wi.second.rbegin()->first.ToString());
 		}
+		s_logger.Info() << "PopulateState: " << profiler.Reset();
 	}
 
 
@@ -79,7 +83,7 @@ namespace hide
 		{
 			cat_it = wi_it->second.insert(std::make_pair(category, 1)).first;
 			if (std::next(cat_it) == wi_it->second.end()) // This was the highest priority
-				InvokeListeners(std::bind(&IContextUnawareSyntaxHighlighterListener::OnWordCategoryChanged, std::placeholders::_1, word, category));
+				InvokeListeners(std::bind(&IContextUnawareSyntaxHighlighterListener::OnWordCategoryChanged, std::placeholders::_1, word, category.ToString()));
 		}
 		else
 			++cat_it->second;
@@ -109,7 +113,7 @@ namespace hide
 			if (std::next(cat_it) == wi_it->second.end()) // This was the highest priority
 			{
 				WordCategory category = (wi_it->second.size() == 1) ? WordCategory::NoneCategory : std::prev(cat_it)->first.GetRaw();
-				InvokeListeners(std::bind(&IContextUnawareSyntaxHighlighterListener::OnWordCategoryChanged, std::placeholders::_1, word, category));
+				InvokeListeners(std::bind(&IContextUnawareSyntaxHighlighterListener::OnWordCategoryChanged, std::placeholders::_1, word, category.ToString()));
 			}
 			wi_it->second.erase(cat_it);
 		}

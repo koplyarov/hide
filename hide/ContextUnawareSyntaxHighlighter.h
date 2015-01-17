@@ -25,7 +25,7 @@ namespace hide
 	{
 		virtual ~IContextUnawareSyntaxHighlighterListener() { }
 
-		virtual void OnWordCategoryChanged(const std::string& word, WordCategory category) { HIDE_PURE_VIRTUAL_CALL(); }
+		virtual void OnWordCategoryChanged(const std::string& word, std::string category) { HIDE_PURE_VIRTUAL_CALL(); }
 	};
 	HIDE_DECLARE_PTR(IContextUnawareSyntaxHighlighterListener);
 
