@@ -18,7 +18,12 @@ function hide#Utils#GotoLocation(location)
 	for w in [ winnr() ] + range(max_winnr, 1, -1)
 		exec w.'wincmd w'
 		if !exists('w:isHideWindow') && !exists('b:hideBuffer')
-			execute 'e '.a:location.filename
+			let buf_num = bufnr(a:location.filename)
+			if buf_num == -1
+				execute 'e '.a:location.filename
+			else
+				execute 'b '.buf_num
+			end
 			call setpos('.', [ bufnr(''), a:location.line, a:location.column, 0 ])
 			normal zz
 			break
