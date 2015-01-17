@@ -2,6 +2,8 @@
 
 #include <iterator>
 
+#include <boost/regex.hpp>
+
 #include <hide/utils/Profiler.h>
 
 
@@ -12,19 +14,32 @@ namespace hide
 	{
 	private:
 		ContextUnawareSyntaxHighlighter*	_inst;
+		boost::regex						_whitespaceRegex;
 
 	public:
 		IndexerListener(ContextUnawareSyntaxHighlighter* inst)
-			: _inst(inst)
+			: _inst(inst), _whitespaceRegex("\\s")
 		{ }
 
 		virtual void OnEntryAdded(const IIndexEntryPtr& entry)
-		{ _inst->AddWord(entry->GetName(), GetCategory(entry)); }
+		{
+			if (EntryIsAWord(entry))
+				_inst->AddWord(entry->GetName(), GetCategory(entry));
+		}
 
 		virtual void OnEntryRemoved(const IIndexEntryPtr& entry)
-		{ _inst->RemoveWord(entry->GetName(), GetCategory(entry)); }
+		{
+			if (EntryIsAWord(entry))
+				_inst->RemoveWord(entry->GetName(), GetCategory(entry));
+		}
 
 	private:
+		bool EntryIsAWord(const IIndexEntryPtr& entry)
+		{
+			boost::smatch m;
+			return !boost::regex_search(entry->GetName(), m, _whitespaceRegex, boost::match_partial);
+		}
+
 		static WordCategory GetCategory(const IIndexEntryPtr& entry)
 		{
 			switch (entry->GetKind().GetRaw())
