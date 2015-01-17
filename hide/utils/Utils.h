@@ -8,6 +8,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include <boost/exception/all.hpp>
@@ -21,6 +22,8 @@ namespace hide
 #define HIDE_DECLARE_MAP(K_, V_) typedef std::map<K_, V_>	K_##To##V_##Map
 #define HIDE_CHECK(Expr_, Exception_) do { if (!(Expr_)) BOOST_THROW_EXCEPTION(Exception_); } while (false)
 #define HIDE_LOCK(Mutex_)	std::lock_guard<decltype(Mutex_)> BOOST_PP_CAT(lock, __LINE__)(Mutex_);
+
+#define HIDE_SELF_TYPE std::remove_cv<std::remove_reference<decltype(*this)>::type>::type
 
 	typedef std::time_t	Time;
 
