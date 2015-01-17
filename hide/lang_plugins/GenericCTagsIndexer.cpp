@@ -22,6 +22,22 @@ namespace hide
 
 	class CTagsIndexEntry : public Comparable<CTagsIndexEntry>, public virtual IIndexEntry
 	{
+	public:
+		struct SerializationProxy
+		{
+			std::string		Name;
+			std::string		Scope;
+			IndexEntryKind	Kind;
+			int				Line;
+
+			SerializationProxy() : Line(0) { }
+			SerializationProxy(const CTagsIndexEntry& e) : Name(e._name), Scope(e._scope), Kind(e._kind), Line(e._location.GetLine()) { }
+
+			CTagsIndexEntry ToEntry(const std::string& filename) const { return CTagsIndexEntry(Name, Scope, Kind, Location(filename, Line, 1)); }
+
+			HIDE_DECLARE_MEMBERS("name", &HIDE_SELF_TYPE::Name, "scope", &HIDE_SELF_TYPE::Scope, "kind", &HIDE_SELF_TYPE::Kind, "line", &HIDE_SELF_TYPE::Line);
+		};
+
 	private:
 		std::string		_name;
 		std::string		_scope;
@@ -41,20 +57,6 @@ namespace hide
 		virtual std::string GetFullName() const	{ return _scope.empty() ? _name : _scope + "::" + _name; }
 		virtual IndexEntryKind GetKind() const	{ return _kind; }
 		virtual Location GetLocation() const	{ return _location; }
-
-		void WriteToPTree(boost::property_tree::ptree& node) const
-		{
-			PTreeWriter w(node);
-			w.Write("name", _name).Write("scope", _scope).Write("kind", _kind).Write("line", _location.GetLine());
-		}
-
-		void ReadFromPTree(const boost::property_tree::ptree& node)
-		{
-			PTreeReader r(node);
-			size_t line;
-			r.Read("name", _name).Read("scope", _scope).Read("kind", _kind).Read("line", line);
-			_location = Location("", line, 1);
-		}
 
 		HIDE_DECLARE_MEMBERS("name", &CTagsIndexEntry::_name, "scope", &CTagsIndexEntry::_scope, "kind", &CTagsIndexEntry::_kind, "location", &CTagsIndexEntry::_location)
 
@@ -78,7 +80,7 @@ namespace hide
 		{
 			using namespace boost::property_tree;
 
-			std::vector<CTagsIndexEntry> ctags_entries;
+			std::vector<CTagsIndexEntry::SerializationProxy> ctags_entries;
 			std::transform(_entries.begin(), _entries.end(), std::back_inserter(ctags_entries), [](const IIndexEntryPtr& e) { return dynamic_cast<const CTagsIndexEntry&>(*e); });
 
 			ptree root;
@@ -106,25 +108,26 @@ namespace hide
 
 		IIndexEntryPtrArray entries;
 
+		StringArray scope_fields = { "class", "struct", "namespace" };
+		std::map<std::string, IndexEntryKind> kinds_map = { { "class", IndexEntryKind::Type }, { "struct", IndexEntryKind::Type }, { "member", IndexEntryKind::Variable }, { "function", IndexEntryKind::Function } };
+
 		CTagsInvoker({ "-f-", "--excmd=number", "--sort=no", "--fields=+aimSztK", _filename },
 				[&](const std::string& name, int line, const CTagsOutputParser::FieldsMap& fields)
 				{
 					std::string scope;
-					if (fields.find("class") != fields.end())
-						scope = fields.at("class");
-					else if (fields.find("struct") != fields.end())
-						scope = fields.at("struct");
-					else if (fields.find("namespace") != fields.end())
-						scope = fields.at("namespace");
+					for (const auto& scope_field : scope_fields)
+					{
+						auto f_it = fields.find(scope_field);
+						if (f_it != fields.end())
+						{
+							scope = f_it->second;
+							break;
+						}
+					}
 
-					IndexEntryKind kind;
 					std::string kind_str = fields.at("kind");
-					if (kind_str == "class" || kind_str == "struct")
-						kind = IndexEntryKind::Type;
-					if (kind_str == "member")
-						kind = IndexEntryKind::Variable;
-					if (kind_str == "function")
-						kind = IndexEntryKind::Function;
+					auto k_it = kinds_map.find(fields.at("kind"));
+					IndexEntryKind kind = k_it != kinds_map.end() ? k_it->second : IndexEntryKind();
 
 					entries.push_back(std::make_shared<CTagsIndexEntry>(name, scope, kind, Location(_filename, line, 1)));
 				}
@@ -143,12 +146,12 @@ namespace hide
 		read_json(f, root);
 
 		PTreeReader wr(root);
-		std::vector<CTagsIndexEntry> ctags_entries;
+		std::vector<CTagsIndexEntry::SerializationProxy> ctags_entries;
 		PTreeReader(root).Read("entries", ctags_entries);
 
 		std::vector<IIndexEntryPtr> entries;
 		for (const auto& e : ctags_entries)
-			entries.push_back(std::make_shared<CTagsIndexEntry>(e.GetName(), e.GetScope(), e.GetKind(), Location(_filename, e.GetLocation().GetLine(), 1)));
+			entries.push_back(std::make_shared<CTagsIndexEntry>(e.ToEntry(_filename)));
 
 		return std::make_shared<CTagsPartialIndex>(entries);
 	}
