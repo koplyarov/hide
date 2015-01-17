@@ -42,6 +42,7 @@ set(hide_SRCS
 	hide/buildsystems/DefaultBuildProcess.cpp
 	hide/buildsystems/cmake/CMakeBuildSystem.cpp
 	hide/buildsystems/cmake/NinjaCMakeBackend.cpp
+	hide/lang_plugins/CTagsInvoker.cpp
 	hide/lang_plugins/GenericCTagsIndexer.cpp
 	hide/lang_plugins/cpp/File.cpp
 	hide/lang_plugins/cpp/LanguagePlugin.cpp

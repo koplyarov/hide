@@ -8,6 +8,7 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/regex.hpp>
 
+#include <hide/lang_plugins/CTagsInvoker.h>
 #include <hide/utils/Comparers.h>
 #include <hide/utils/Executable.h>
 #include <hide/utils/MembersVisitor.h>
@@ -103,70 +104,31 @@ namespace hide
 	{
 		using namespace boost;
 
-		typedef std::map<std::string, std::string> FieldsMap;
-
-		StringArray params;
-		params.push_back("-f-");
-		params.push_back("--excmd=number");
-		params.push_back("--sort=no");
-		params.push_back("--fields=+aimSztK");
-		params.push_back(_filename);
-
-		smatch m;
-		regex re("^([^	]+)	([^	]+)	(\\d+);\"	(.*)$");
-
 		IIndexEntryPtrArray entries;
 
-		ExecutablePtr ctags = std::make_shared<Executable>("ctags", params);
-		std::promise<void> stdout_closed;
-		ctags->GetStdout()->AddListener(std::make_shared<ReadBufferLinesListener>(
-				[&](const std::string& s)
+		CTagsInvoker({ "-f-", "--excmd=number", "--sort=no", "--fields=+aimSztK", _filename },
+				[&](const std::string& name, int line, const CTagsOutputParser::FieldsMap& fields)
 				{
-					if (regex_match(s, m, re))
-					{
-						std::string name = m[1];
-						size_t line = std::stoi(m[3]);
-						FieldsMap fields;
-						std::string field_to_parse;
-						std::stringstream stream(m[4]);
-						while (std::getline(stream, field_to_parse, '\t'))
-						{
-							size_t colon_pos = field_to_parse.find(':');
-							if (colon_pos == std::string::npos)
-							{
-								s_logger.Warning() << "Could not parse ctags tag field: '" << field_to_parse << "'";
-								continue;
-							}
-							fields.insert(std::make_pair(field_to_parse.substr(0, colon_pos), field_to_parse.substr(colon_pos + 1)));
-						}
+					std::string scope;
+					if (fields.find("class") != fields.end())
+						scope = fields.at("class");
+					else if (fields.find("struct") != fields.end())
+						scope = fields.at("struct");
+					else if (fields.find("namespace") != fields.end())
+						scope = fields.at("namespace");
 
-						std::string scope;
-						if (fields.find("class") != fields.end())
-							scope = fields["class"];
-						else if (fields.find("struct") != fields.end())
-							scope = fields["struct"];
-						else if (fields.find("namespace") != fields.end())
-							scope = fields["namespace"];
+					IndexEntryKind kind;
+					std::string kind_str = fields.at("kind");
+					if (kind_str == "class" || kind_str == "struct")
+						kind = IndexEntryKind::Type;
+					if (kind_str == "member")
+						kind = IndexEntryKind::Variable;
+					if (kind_str == "function")
+						kind = IndexEntryKind::Function;
 
-						IndexEntryKind kind;
-						std::string kind_str = fields.at("kind");
-						if (kind_str == "class" || kind_str == "struct")
-							kind = IndexEntryKind::Type;
-						if (kind_str == "member")
-							kind = IndexEntryKind::Variable;
-						if (kind_str == "function")
-							kind = IndexEntryKind::Function;
-
-						entries.push_back(std::make_shared<CTagsIndexEntry>(name, scope, kind, Location(_filename, line, 1)));
-					}
-					else
-						s_logger.Warning() << "Could not parse ctags output line: '" << s << "'";
-				},
-				[&]() { stdout_closed.set_value(); }
-			));
-
-		stdout_closed.get_future().wait();
-		ctags.reset();
+					entries.push_back(std::make_shared<CTagsIndexEntry>(name, scope, kind, Location(_filename, line, 1)));
+				}
+			);
 
 		return std::make_shared<CTagsPartialIndex>(entries);
 	}
