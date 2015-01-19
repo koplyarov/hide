@@ -18,6 +18,48 @@ namespace hide
 	namespace
 	{
 #if HIDE_PLATFORM_POSIX
+		class PipeWriteBuffer : public virtual IWriteBuffer
+		{
+		private:
+			static NamedLogger	s_logger;
+			int					_fd;
+
+		public:
+			PipeWriteBuffer(int fd)
+				: _fd(fd)
+			{ }
+
+			~PipeWriteBuffer()
+			{
+				Close();
+			}
+
+			virtual void Write(const ByteArray& data)
+			{
+				const char* ptr = data.data();
+				int count = data.size();
+
+				while (count != 0)
+				{
+					int ret = ::write(_fd, ptr, count);
+					if (ret < 0)
+						BOOST_THROW_EXCEPTION(std::runtime_error("write failed!"));
+					else if (ret > 0)
+					{
+						ptr += ret;
+						count -= ret;
+					}
+				}
+			}
+
+			virtual void Close()
+			{
+				if (_fd != -1)
+					::close(_fd);
+			}
+		};
+
+
 		class PipeReadBuffer : public ListenersHolder<IReadBufferListener, IReadBuffer>
 		{
 			HIDE_NONCOPYABLE(PipeReadBuffer);
@@ -138,7 +180,7 @@ namespace hide
 			close(out_pipe[write_index]);
 			close(err_pipe[write_index]);
 
-			close(in_pipe[write_index]);
+			_stdin.reset(new PipeWriteBuffer(in_pipe[write_index]));
 			_stdout.reset(new PipeReadBuffer(out_pipe[read_index]));
 			_stderr.reset(new PipeReadBuffer(err_pipe[read_index]));
 

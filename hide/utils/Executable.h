@@ -11,6 +11,7 @@
 #endif
 
 #include <hide/utils/IReadBuffer.h>
+#include <hide/utils/IWriteBuffer.h>
 #include <hide/utils/ListenersHolder.h>
 #include <hide/utils/NamedLogger.h>
 #include <hide/utils/Utils.h>
@@ -51,6 +52,7 @@ namespace hide
 #endif
 
 		boost::optional<int>		_retCode;
+		IWriteBufferPtr				_stdin;
 		IReadBufferPtr				_stdout;
 		IReadBufferPtr				_stderr;
 		std::thread					_thread;
@@ -61,6 +63,7 @@ namespace hide
 
 		void Interrupt();
 
+		IWriteBufferPtr GetStdin() const { return _stdin; }
 		IReadBufferPtr GetStdout() const { return _stdout; }
 		IReadBufferPtr GetStderr() const { return _stderr; }
 

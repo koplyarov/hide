@@ -43,6 +43,7 @@ namespace hide
 		static NamedLogger		s_logger;
 		ExecutablePtr			_executable;
 		std::promise<void>		_stdoutClosed;
+		std::promise<void>		_stderrClosed;
 
 	public:
 		CTagsInvoker(const StringArray& parameters, const CTagsOutputParser::TagHandlerFunc& tagHandler);

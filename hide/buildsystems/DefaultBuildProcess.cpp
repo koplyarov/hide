@@ -30,6 +30,7 @@ namespace hide
 		: _interrupted(false), _stdoutClosed(false)
 	{
 		_executable = std::make_shared<Executable>(executable, parameters);
+		_executable->GetStdin()->Close();
 		_executable->GetStdout()->AddListener(std::make_shared<ReadBufferLinesListener>(
 				std::bind(&DefaultBuildProcess::ParseLine, this, std::placeholders::_1),
 				std::bind(&DefaultBuildProcess::PipeClosedHandler, this, std::ref(_stdoutClosed))

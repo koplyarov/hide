@@ -55,12 +55,18 @@ namespace hide
 				[output_parser](const std::string& s) { output_parser->ProcessLine(s); },
 				[&]() { _stdoutClosed.set_value(); }
 			));
+		_executable->GetStderr()->AddListener(std::make_shared<ReadBufferLinesListener>(
+				[output_parser](const std::string& s) { s_logger.Warning() << "ctags stderr: " << s; },
+				[&]() { _stderrClosed.set_value(); }
+			));
+		_executable->GetStdin()->Close();
 	}
 
 
 	CTagsInvoker::~CTagsInvoker()
 	{
 		_stdoutClosed.get_future().wait();
+		_stderrClosed.get_future().wait();
 		_executable.reset();
 	}
 

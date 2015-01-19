@@ -43,6 +43,7 @@ namespace hide
 			regex re("^([^:]+):.*$");
 
 			ExecutablePtr ninja = std::make_shared<Executable>("ninja", params);
+			ninja->GetStdin()->Close();
 			std::promise<void> stdout_closed;
 			ninja->GetStdout()->AddListener(std::make_shared<ReadBufferLinesListener>(
 					[&](const std::string& s)

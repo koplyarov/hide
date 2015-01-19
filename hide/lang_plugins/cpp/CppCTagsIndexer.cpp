@@ -52,6 +52,8 @@ namespace hide
 		StringArray params = { "-v", "-x", "c++", "-E", "-" };
 		ExecutablePtr gcc = std::make_shared<Executable>("g++", params);
 
+		gcc->GetStdin()->Close();
+
 		boost::optional<int> ret_code;
 		gcc->AddListener(std::make_shared<FuncExecutableListener>(
 			[&](int retCode) { ret_code = retCode; }
