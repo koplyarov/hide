@@ -264,6 +264,7 @@ namespace hide
 		if ((wpid = waitpid(_pid, &status, 0)) < 0)
 			BOOST_THROW_EXCEPTION(std::runtime_error("waitpid failed"));
 
+		HIDE_LOCK(GetMutex());
 		if (WIFEXITED(status))
 		{
 			s_logger.Debug() << "The child (" << wpid << ") exited normally, status: " << status;
