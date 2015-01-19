@@ -1,6 +1,7 @@
 #ifndef HIDE_UTILS_EXECUTABLE_H
 #define HIDE_UTILS_EXECUTABLE_H
 
+#include <functional>
 #include <thread>
 
 #include <boost/optional.hpp>
@@ -25,6 +26,19 @@ namespace hide
 		virtual void OnFinished(int retCode) { }
 	};
 	HIDE_DECLARE_PTR(IExecutableListener);
+
+
+	class FuncExecutableListener : public IExecutableListener
+	{
+		typedef std::function<void(int)>	HandlerFunc;
+
+	private:
+		HandlerFunc		_handler;
+
+	public:
+		FuncExecutableListener(const HandlerFunc& handler) : _handler(handler) { }
+		virtual void OnFinished(int retCode) { _handler(retCode); }
+	};
 
 
 	class Executable : public ListenersHolder<IExecutableListener>
