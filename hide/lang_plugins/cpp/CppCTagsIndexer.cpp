@@ -230,13 +230,38 @@ namespace hide
 		}
 
 		{
-	 		// grep -v "^#\s*include" srcfile | cpp -w -include tmpfile.pp -o tmpfile.cpp
-			StringArray preprocessor_params = { "-w", "-xc++", "-std=c++11", "-include", file_to_include.string(), "-o", preprocessor_result.string(), "-" };
+			StringArray preprocessor_params = { "-w", "-xc++", "-std=c++11", "-include", file_to_include.string(), "-o-", "-" };
 
 			boost::optional<int> ret_code;
 			ExecutablePtr preprocessor = std::make_shared<Executable>("cpp", preprocessor_params);
 			preprocessor->AddListener(std::make_shared<FuncExecutableListener>(
 				[&](int retCode) { ret_code = retCode; }
+			));
+
+			boost::regex pp_stuff_re(R"X(\s*#\s+(\d+)\s+"([^"]+)".*)X"); // " This comment fixes vim syntax highlight =)
+			std::promise<void> stdout_closed;
+			std::ofstream preprocessor_result_f(preprocessor_result.string(), std::ios::binary | std::ios::out);
+			int line_num = 1;
+			preprocessor->GetStdout()->AddListener(std::make_shared<ReadBufferLinesListener>(
+					[&](const std::string& s)
+					{
+						boost::smatch m;
+						if (!boost::regex_match(s, m, pp_stuff_re))
+						{
+							preprocessor_result_f << s << "\n";
+							++line_num;
+						}
+						else if (m[2] == "<stdin>")
+						{
+							int set_next_line_num = std::stoi(m[1]);
+							if (set_next_line_num < line_num)
+								s_logger.Warning() << "Invalid line_num in preprocessor output!";
+							else
+								for (; line_num < set_next_line_num; ++line_num)
+									preprocessor_result_f << "\n";
+						}
+					},
+					[&]() { stdout_closed.set_value(); }
 			));
 
 			std::promise<void> stderr_closed;
@@ -261,6 +286,7 @@ namespace hide
 			}
 			preprocessor_stdin->Close();
 
+			stdout_closed.get_future().wait();
 			stderr_closed.get_future().wait();
 			preprocessor.reset();
 
