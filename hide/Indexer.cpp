@@ -224,7 +224,10 @@ namespace hide
 	{
 		_filesListener = std::make_shared<FilesListener>(this);
 		_files->AddListener(_filesListener);
-		_events.push(Event{EventType::RemoveOutdatedFiles, nullptr}); // Now that we have all the events from the ProjectFiles::PopulateState
+		{
+			HIDE_LOCK(_mutex);
+			_events.push(Event{EventType::RemoveOutdatedFiles, nullptr}); // Now that we have all the events from the ProjectFiles::PopulateState
+		}
 		_thread = MakeThread("indexer", std::bind(&Indexer::ThreadFunc, this));
 	}
 
