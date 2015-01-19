@@ -104,8 +104,6 @@ namespace hide
 
 	IPartialIndexPtr GenericCTagsIndexer::BuildIndex()
 	{
-		using namespace boost;
-
 		IIndexEntryPtrArray entries;
 
 		StringArray scope_fields = { "class", "struct", "namespace" };
