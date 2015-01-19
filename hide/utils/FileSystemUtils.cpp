@@ -1,8 +1,13 @@
 #include <hide/utils/FileSystemUtils.h>
 
+#include <hide/utils/NamedLogger.h>
+
 
 namespace hide
 {
+
+	static NamedLogger g_fsUtilsLogger("FileSystemUtils");
+
 
 	boost::filesystem::path RelativePath(const boost::filesystem::path &path, const boost::filesystem::path &relative_to)
 	{
@@ -62,6 +67,33 @@ namespace hide
 			return false;
 
 		return std::equal(dir.begin(), dir.end(), file.begin());
+	}
+
+
+	void RemoveFileAndParentDirectories(const boost::filesystem::path& filepath, const boost::filesystem::path& stopAt)
+	{
+		using namespace boost::filesystem;
+
+		path normalized_filepath = filepath;
+		normalized_filepath.normalize();
+
+		boost::system::error_code err;
+
+		g_fsUtilsLogger.Debug() << "Removing " << normalized_filepath;
+		remove(normalized_filepath, err);
+		if (err)
+			g_fsUtilsLogger.Warning() << "Could not remove " << normalized_filepath << ": " << err;
+
+		path p = normalized_filepath.parent_path(), stop_at = stopAt;
+		p.normalize();
+		stop_at.normalize();
+		for (; p != stopAt && is_empty(p); p = p.parent_path())
+		{
+			g_fsUtilsLogger.Debug() << "Removing " << p;
+			remove(p, err);
+			if (err)
+				g_fsUtilsLogger.Warning() << "Could not remove " << p << ": " << err;
+		}
 	}
 
 }

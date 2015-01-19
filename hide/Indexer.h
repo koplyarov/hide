@@ -34,8 +34,6 @@ namespace hide
 
 		typedef ListenersHolder<IIndexerListener> ListenersHolderBase;
 
-		friend class TestIndexQuery;
-
 		struct EventType
 		{
 			HIDE_ENUM_VALUES(IndexableAdded, IndexableRemoved, IndexableModified, RemoveOutdatedFiles);
@@ -104,7 +102,6 @@ namespace hide
 		void ProcessIndexableEvent(const Event& e);
 		void RemoveOutdatedFiles();
 
-		static void DoRemoveFile(const boost::filesystem::path& filepath);
 		static boost::filesystem::path GetIndexFilePath(const IIndexablePtr& indexable);
 		static boost::filesystem::path GetMetaFilePath(const IIndexablePtr& indexable);
 	};

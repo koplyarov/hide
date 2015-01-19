@@ -7,6 +7,7 @@
 #include <boost/range/algorithm.hpp>
 #include <boost/scope_exit.hpp>
 
+#include <hide/utils/FileSystemUtils.h>
 #include <hide/utils/ListenersHolder.h>
 #include <hide/utils/PTree.h>
 #include <hide/utils/Profiler.h>
@@ -405,8 +406,8 @@ namespace hide
 			if (indexable_it == _partialIndexes.end())
 				return;
 
-			DoRemoveFile(indexable_it->second->IndexFilePath);
-			DoRemoveFile(indexable_it->second->MetaFilePath);
+			RemoveFileAndParentDirectories(indexable_it->second->IndexFilePath, s_indexDirectory);
+			RemoveFileAndParentDirectories(indexable_it->second->MetaFilePath, s_indexDirectory);
 
 			for (auto it : indexable_it->second->SymbolNameToSymbolIterators)
 			{
@@ -481,37 +482,13 @@ namespace hide
 			else
 			{
 				if (good_files.find(path(p).normalize()) == good_files.end())
-					DoRemoveFile(p);
+					RemoveFileAndParentDirectories(p, s_indexDirectory);
 			}
 		};
 
 		s_logger.Info() << "RemoveOutdatedFiles finished: " << profiler.Reset();
 
 		scan_func(s_indexDirectory);
-	}
-
-
-	void Indexer::DoRemoveFile(const boost::filesystem::path& filepath)
-	{
-		using namespace boost::filesystem;
-
-		boost::system::error_code err;
-
-		s_logger.Debug() << "Removing " << filepath;
-		remove(filepath, err);
-		if (err)
-			s_logger.Warning() << "Could not remove " << filepath << ": " << err;
-
-		path p = filepath.parent_path(), index_dir = s_indexDirectory;
-		p.normalize();
-		index_dir.normalize();
-		for (; p != index_dir && is_empty(p); p = p.parent_path())
-		{
-			s_logger.Debug() << "Removing " << p;
-			remove(p, err);
-			if (err)
-				s_logger.Warning() << "Could not remove " << p << ": " << err;
-		}
 	}
 
 
