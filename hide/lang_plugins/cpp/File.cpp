@@ -2,7 +2,7 @@
 
 #include <boost/filesystem.hpp>
 
-#include <hide/lang_plugins/GenericCTagsIndexer.h>
+#include <hide/lang_plugins/cpp/CppCTagsIndexer.h>
 #include <hide/utils/FileSystemUtils.h>
 
 
@@ -50,6 +50,6 @@ namespace cpp
 
 
 	IPartialIndexerPtr File::GetIndexer()
-	{ return std::make_shared<GenericCTagsIndexer>(_filename); }
+	{ return std::make_shared<CppCTagsIndexer>(_filename); }
 
 }}
