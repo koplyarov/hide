@@ -10,8 +10,8 @@
 #	include <sys/types.h>
 #endif
 
-#include <hide/utils/IReadBuffer.h>
-#include <hide/utils/IWriteBuffer.h>
+#include <hide/utils/IPipeReadEndHandler.h>
+#include <hide/utils/IPipeWriteEnd.h>
 #include <hide/utils/ListenersHolder.h>
 #include <hide/utils/NamedLogger.h>
 #include <hide/utils/Utils.h>
@@ -44,6 +44,14 @@ namespace hide
 
 	class Executable : public ListenersHolder<IExecutableListener>
 	{
+		HIDE_NONCOPYABLE(Executable);
+
+		class PipeWriteEnd;
+		HIDE_DECLARE_PTR(PipeWriteEnd);
+
+		class PipeReadEnd;
+		HIDE_DECLARE_PTR(PipeReadEnd);
+
 	private:
 		static NamedLogger			s_logger;
 
@@ -52,20 +60,19 @@ namespace hide
 #endif
 
 		boost::optional<int>		_retCode;
-		IWriteBufferPtr				_stdin;
-		IReadBufferPtr				_stdout;
-		IReadBufferPtr				_stderr;
+		IPipeWriteEndPtr			_stdin;
+		PipeReadEndPtr				_stdout;
+		PipeReadEndPtr				_stderr;
 		std::thread					_thread;
 
 	public:
-		Executable(const std::string& executable, const StringArray& parameters);
+		Executable(const std::string& executable, const StringArray& parameters, const IPipeReadEndHandlerPtr& stdoutHandler, const IPipeReadEndHandlerPtr& stderrHandler);
+		Executable(const std::string& executable, const StringArray& parameters, const IPipeReadEndHandlerPtr& stdoutHandler, const NamedLogger& stderrLogger);
 		~Executable();
 
 		void Interrupt();
 
-		IWriteBufferPtr GetStdin() const { return _stdin; }
-		IReadBufferPtr GetStdout() const { return _stdout; }
-		IReadBufferPtr GetStderr() const { return _stderr; }
+		IPipeWriteEndPtr GetStdin() const { return _stdin; }
 
 	protected:
 		virtual void PopulateState(const IExecutableListenerPtr& listener) const;

@@ -53,7 +53,7 @@ set(hide_SRCS
 	hide/utils/FileSystemUtils.cpp
 	hide/utils/Logger.cpp
 	hide/utils/LoggerMessage.cpp
-	hide/utils/ReadBufferLinesListener.cpp
+	hide/utils/PipeLinesReader.cpp
 	hide/utils/Thread.cpp
 )
 

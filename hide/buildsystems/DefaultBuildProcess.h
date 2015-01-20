@@ -19,7 +19,6 @@ namespace hide
 		static NamedLogger		s_logger;
 		ExecutablePtr			_executable;
 		IExecutableListenerPtr	_executableListener;
-		IReadBufferListenerPtr	_stdoutListener;
 		std::recursive_mutex	_mutex;
 		bool					_interrupted;
 		bool					_stdoutClosed;
@@ -33,9 +32,7 @@ namespace hide
 
 	private:
 		void ParseLine(const std::string& str);
-		void PipeClosedHandler(bool& flag);
 		void SetRetCode(int retCode);
-		void TryReportFinished();
 	};
 
 }

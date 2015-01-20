@@ -1,6 +1,6 @@
 #include <hide/lang_plugins/CTagsInvoker.h>
 
-#include <hide/utils/ReadBufferLinesListener.h>
+#include <hide/utils/PipeLinesReader.h>
 
 
 namespace hide
@@ -50,23 +50,16 @@ namespace hide
 	CTagsInvoker::CTagsInvoker(const StringArray& parameters, const CTagsOutputParser::TagHandlerFunc& tagHandler)
 	{
 		auto output_parser = std::make_shared<CTagsOutputParser>(tagHandler);
-		_executable = std::make_shared<Executable>("ctags", parameters);
-		_executable->GetStdout()->AddListener(std::make_shared<ReadBufferLinesListener>(
-				[output_parser](const std::string& s) { output_parser->ProcessLine(s); },
-				[&]() { _stdoutClosed.set_value(); }
-			));
-		_executable->GetStderr()->AddListener(std::make_shared<ReadBufferLinesListener>(
-				[output_parser](const std::string& s) { s_logger.Warning() << "ctags stderr: " << s; },
-				[&]() { _stderrClosed.set_value(); }
-			));
+		_executable = std::make_shared<Executable>("ctags", parameters,
+				std::make_shared<PipeLinesReader>([output_parser](const std::string& s) { output_parser->ProcessLine(s); }),
+				s_logger
+			);
 		_executable->GetStdin()->Close();
 	}
 
 
 	CTagsInvoker::~CTagsInvoker()
 	{
-		_stdoutClosed.get_future().wait();
-		_stderrClosed.get_future().wait();
 		_executable.reset();
 	}
 

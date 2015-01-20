@@ -5,147 +5,130 @@
 #include <unistd.h>
 
 #include <sstream>
+#include <system_error>
 #include <thread>
 
 #include <boost/scope_exit.hpp>
 
+#include <hide/utils/PipeLinesReader.h>
 #include <hide/utils/Thread.h>
 
 
 namespace hide
 {
 
-	namespace
-	{
 #if HIDE_PLATFORM_POSIX
-		class PipeWriteBuffer : public virtual IWriteBuffer
+	class Executable::PipeWriteEnd : public virtual IPipeWriteEnd
+	{
+	private:
+		static NamedLogger	s_logger;
+		int					_fd;
+
+	public:
+		PipeWriteEnd(int fd)
+			: _fd(fd)
+		{ }
+
+		~PipeWriteEnd()
 		{
-		private:
-			static NamedLogger	s_logger;
-			int					_fd;
+			Close();
+		}
 
-		public:
-			PipeWriteBuffer(int fd)
-				: _fd(fd)
-			{ }
+		virtual void Write(const ByteArray& data)
+		{
+			const char* ptr = data.data();
+			int count = data.size();
 
-			~PipeWriteBuffer()
+			while (count != 0)
 			{
-				Close();
-			}
-
-			virtual void Write(const ByteArray& data)
-			{
-				const char* ptr = data.data();
-				int count = data.size();
-
-				while (count != 0)
+				int ret = ::write(_fd, ptr, count);
+				if (ret < 0)
+					BOOST_THROW_EXCEPTION(std::system_error(errno, std::system_category(), "write failed!"));
+				else if (ret > 0)
 				{
-					int ret = ::write(_fd, ptr, count);
-					if (ret < 0)
-						BOOST_THROW_EXCEPTION(std::runtime_error("write failed!"));
-					else if (ret > 0)
-					{
-						ptr += ret;
-						count -= ret;
-					}
+					ptr += ret;
+					count -= ret;
 				}
 			}
+		}
 
-			virtual void Close()
-			{
-				if (_fd != -1)
-					::close(_fd);
-			}
-		};
-
-
-		class PipeReadBuffer : public ListenersHolder<IReadBufferListener, IReadBuffer>
+		virtual void Close()
 		{
-			HIDE_NONCOPYABLE(PipeReadBuffer);
-
-		private:
-			static NamedLogger	s_logger;
-			int					_fd;
-			ByteArray			_data;
-			bool				_endOfData;
-			std::thread			_thread;
-
-		public:
-			PipeReadBuffer(int fd)
-				: _fd(fd), _endOfData(false)
-			{
-				//fcntl(out_pipe[read_index], F_SETFL, O_NONBLOCK | O_ASYNC); // TODO: check errors
-				_thread = MakeThread("pipeReadBuffer(" + std::to_string(fd) + ")", std::bind(&PipeReadBuffer::ThreadFunc, this));
-			}
-
-			~PipeReadBuffer()
-			{
+			if (_fd != -1)
 				::close(_fd);
-				_thread.join();
-			}
+		}
+	};
+	HIDE_NAMED_LOGGER(Executable::PipeWriteEnd);
 
-			virtual ByteArray Read(int64_t ofs) const
+
+	class Executable::PipeReadEnd
+	{
+		HIDE_NONCOPYABLE(PipeReadEnd);
+
+	private:
+		static NamedLogger		s_logger;
+		int						_fd;
+		IPipeReadEndHandlerPtr	_handler;
+		std::thread				_thread;
+
+	public:
+		PipeReadEnd(int fd, const IPipeReadEndHandlerPtr& handler)
+			: _fd(fd), _handler(handler)
+		{ _thread = MakeThread("pipeReadBuffer(" + std::to_string(fd) + ")", std::bind(&PipeReadEnd::ThreadFunc, this)); }
+
+		~PipeReadEnd()
+		{
+			_thread.join();
+			close(_fd);
+		}
+
+	private:
+		void ThreadFunc()
+		{
+			std::array<char, 256> local_buf;
+			int ret = 0;
+
+			BOOST_SCOPE_EXIT_ALL(&) {
+				try
+				{ _handler->OnEndOfData(); }
+				catch (const std::exception& ex)
+				{ s_logger.Error() << "An exception in pipe handler: " << ex; }
+			};
+
+			do
 			{
-				HIDE_LOCK(GetMutex());
-				if (ofs > (int64_t)_data.size())
-					BOOST_THROW_EXCEPTION(std::runtime_error("Invalid offset!"));
-				ByteArray result;
-				int64_t result_size = _data.size() - ofs;
-				result.resize(result_size);
-				std::copy(_data.begin() + ofs, _data.begin() + ofs + result_size, result.begin());
-				return result;
-			}
-
-		protected:
-			virtual void PopulateState(const IReadBufferListenerPtr& listener) const
-			{
-				listener->OnBufferChanged(*this);
-				if (_endOfData)
-					listener->OnEndOfData();
-			}
-
-		private:
-			void ThreadFunc()
-			{
-				std::array<char, 256> local_buf;
-				int ret = 0;
-
-				BOOST_SCOPE_EXIT_ALL(&) {
-					HIDE_LOCK(GetMutex());
-					_endOfData = true;
-					InvokeListeners(std::bind(&IReadBufferListener::OnEndOfData, std::placeholders::_1));
-				};
-
-				do
+				ret = read(_fd, local_buf.data(), local_buf.size());
+				if (ret < 0)
 				{
-					ret = read(_fd, local_buf.data(), local_buf.size());
-					if (ret < 0)
-					{
-						if (errno == EBADF)
-							break;
-						else
-							BOOST_THROW_EXCEPTION(std::runtime_error("read failed!"));
-					}
-					else if (ret > 0)
-					{
-						HIDE_LOCK(GetMutex());
-						_data.resize(_data.size() + ret);
-						std::copy(local_buf.begin(), local_buf.begin() + ret, _data.end() - ret);
-						InvokeListeners(std::bind(&IReadBufferListener::OnBufferChanged, std::placeholders::_1, std::ref(*this)));
-					}
-				} while (ret > 0);
-			}
-		};
-		HIDE_DECLARE_PTR(PipeReadBuffer);
-		HIDE_NAMED_LOGGER(PipeReadBuffer);
+					if (errno == EBADF)
+						break;
+					else
+						BOOST_THROW_EXCEPTION(std::system_error(errno, std::system_category(), "read failed!"));
+				}
+				else if (ret > 0)
+				{
+					try
+					{ _handler->OnData(ByteArray(local_buf.begin(), local_buf.begin() + ret)); }
+					catch (const std::exception& ex)
+					{ s_logger.Error() << "An exception in pipe handler: " << ex; }
+				}
+			} while (ret > 0);
+		}
+	};
+	HIDE_NAMED_LOGGER(Executable::PipeReadEnd);
 #endif
-	}
 
 
 	HIDE_NAMED_LOGGER(Executable);
 
-	Executable::Executable(const std::string& executable, const StringArray& parameters) // TODO: implement async invokation
+	Executable::Executable(const std::string& executable, const StringArray& parameters, const IPipeReadEndHandlerPtr& stdoutHandler, const NamedLogger& stderrLogger)
+		:	Executable(
+				executable, parameters, stdoutHandler,
+				std::make_shared<PipeLinesReader>([executable, &stderrLogger](const std::string& s){ stderrLogger.Warning() << executable << " stderr: " << s; })
+			)
+	{ }
+
+	Executable::Executable(const std::string& executable, const StringArray& parameters, const IPipeReadEndHandlerPtr& stdoutHandler, const IPipeReadEndHandlerPtr& stderrHandler) // TODO: implement async invokation
 	{
 #if HIDE_PLATFORM_POSIX
 		static const int read_index = 0, write_index = 1;
@@ -180,9 +163,9 @@ namespace hide
 			close(out_pipe[write_index]);
 			close(err_pipe[write_index]);
 
-			_stdin.reset(new PipeWriteBuffer(in_pipe[write_index]));
-			_stdout.reset(new PipeReadBuffer(out_pipe[read_index]));
-			_stderr.reset(new PipeReadBuffer(err_pipe[read_index]));
+			_stdin.reset(new PipeWriteEnd(in_pipe[write_index]));
+			_stdout.reset(new PipeReadEnd(out_pipe[read_index], stdoutHandler));
+			_stderr.reset(new PipeReadEnd(err_pipe[read_index], stderrHandler));
 
 			_thread = MakeThread("executable(" + std::to_string(_pid) + ")", std::bind(&Executable::ThreadFunc, this));
 		}
@@ -263,6 +246,9 @@ namespace hide
 		int status = 0, wpid = 0;
 		if ((wpid = waitpid(_pid, &status, 0)) < 0)
 			BOOST_THROW_EXCEPTION(std::runtime_error("waitpid failed"));
+
+		_stdout.reset();
+		_stderr.reset();
 
 		HIDE_LOCK(GetMutex());
 		if (WIFEXITED(status))

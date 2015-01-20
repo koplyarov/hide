@@ -16,7 +16,7 @@
 #include <hide/utils/Comparers.h>
 #include <hide/utils/FileSystemUtils.h>
 #include <hide/utils/PTree.h>
-#include <hide/utils/ReadBufferLinesListener.h>
+#include <hide/utils/PipeLinesReader.h>
 
 
 namespace hide
@@ -127,20 +127,13 @@ namespace hide
 
 	static StringArray GetStdIncludePaths()
 	{
-		StringArray params = { "-v", "-x", "c++", "-E", "-" };
-		ExecutablePtr gcc = std::make_shared<Executable>("g++", params);
-
-		gcc->GetStdin()->Close();
-
-		boost::optional<int> ret_code;
-		gcc->AddListener(std::make_shared<FuncExecutableListener>(
-			[&](int retCode) { ret_code = retCode; }
-		));
-
 		StringArray result;
 		bool include_paths_section = false;
-		std::promise<void> stderr_closed;
-		gcc->GetStderr()->AddListener(std::make_shared<ReadBufferLinesListener>(
+
+		StringArray params = { "-v", "-x", "c++", "-E", "-" };
+		ExecutablePtr gcc = std::make_shared<Executable>("g++", params,
+			std::make_shared<PipeLinesReader>([](const std::string& s) { }),
+			std::make_shared<PipeLinesReader>(
 				[&](const std::string& s)
 				{
 					if (s == "End of search list.")
@@ -149,11 +142,14 @@ namespace hide
 						result.push_back(boost::algorithm::trim_copy(s));
 					if (s == "#include <...> search starts here:")
 						include_paths_section = true;
-				},
-				[&]() { stderr_closed.set_value(); }
-		));
+				}
+			)
+		);
 
-		stderr_closed.get_future().wait();
+		boost::optional<int> ret_code;
+		gcc->AddListener(std::make_shared<FuncExecutableListener>([&](int retCode) { ret_code = retCode; }));
+
+		gcc->GetStdin()->Close();
 		gcc.reset();
 
 		return result;
@@ -189,19 +185,11 @@ namespace hide
 			StringArray preprocessor_params = { "-xc++", "-std=c++11", "-DHIDE_PLATFORM_POSIX", "-I.", "-dM", "-o-", _filename };
 			boost::transform(std_include_paths, std::back_inserter(preprocessor_params), [](const std::string& s) { return "-I" + s; });
 
-			boost::optional<int> ret_code;
-			ExecutablePtr preprocessor = std::make_shared<Executable>("cpp", preprocessor_params);
-
-			preprocessor->GetStdin()->Close();
-
-			preprocessor->AddListener(std::make_shared<FuncExecutableListener>(
-				[&](int retCode) { ret_code = retCode; }
-			));
-
-			std::promise<void> stdout_closed;
 			boost::regex define_re(R"(\s*#\s*define\s+([A-Za-z_][A-Za-z0-9_]*).*)");
 			std::ofstream file_to_include_f(file_to_include.string(), std::ios::binary | std::ios::out);
-			preprocessor->GetStdout()->AddListener(std::make_shared<ReadBufferLinesListener>(
+
+			ExecutablePtr preprocessor = std::make_shared<Executable>("cpp", preprocessor_params,
+				std::make_shared<PipeLinesReader>(
 					[&](const std::string& s)
 					{
 						boost::smatch m;
@@ -212,18 +200,14 @@ namespace hide
 						}
 						if (file_defines.find(m[1]) == file_defines.end())
 							file_to_include_f << s << "\n";
-					},
-					[&]() { stdout_closed.set_value(); }
-			));
+					}),
+				s_logger
+			);
 
-			std::promise<void> stderr_closed;
-			preprocessor->GetStderr()->AddListener(std::make_shared<ReadBufferLinesListener>(
-					[&](const std::string& s) { s_logger.Warning() << "cpp stderr: " << s; },
-					[&]() { stderr_closed.set_value(); }
-			));
+			boost::optional<int> ret_code;
+			preprocessor->AddListener(std::make_shared<FuncExecutableListener>([&](int retCode) { ret_code = retCode; }));
 
-			stdout_closed.get_future().wait();
-			stderr_closed.get_future().wait();
+			preprocessor->GetStdin()->Close();
 			preprocessor.reset();
 
 			HIDE_CHECK(*ret_code == 0, std::runtime_error(StringBuilder() % "Preprocessor failed, ret code: " % *ret_code));
@@ -232,17 +216,11 @@ namespace hide
 		{
 			StringArray preprocessor_params = { "-w", "-xc++", "-std=c++11", "-include", file_to_include.string(), "-o-", "-" };
 
-			boost::optional<int> ret_code;
-			ExecutablePtr preprocessor = std::make_shared<Executable>("cpp", preprocessor_params);
-			preprocessor->AddListener(std::make_shared<FuncExecutableListener>(
-				[&](int retCode) { ret_code = retCode; }
-			));
-
 			boost::regex pp_stuff_re(R"X(\s*#\s+(\d+)\s+"([^"]+)".*)X"); // " This comment fixes vim syntax highlight =)
-			std::promise<void> stdout_closed;
 			std::ofstream preprocessor_result_f(preprocessor_result.string(), std::ios::binary | std::ios::out);
 			int line_num = 1;
-			preprocessor->GetStdout()->AddListener(std::make_shared<ReadBufferLinesListener>(
+			ExecutablePtr preprocessor = std::make_shared<Executable>("cpp", preprocessor_params,
+				std::make_shared<PipeLinesReader>(
 					[&](const std::string& s)
 					{
 						boost::smatch m;
@@ -260,19 +238,15 @@ namespace hide
 								for (; line_num < set_next_line_num; ++line_num)
 									preprocessor_result_f << "\n";
 						}
-					},
-					[&]() { stdout_closed.set_value(); }
-			));
+					}),
+				s_logger
+			);
 
-			std::promise<void> stderr_closed;
-			preprocessor->GetStderr()->AddListener(std::make_shared<ReadBufferLinesListener>(
-					[&](const std::string& s) { s_logger.Warning() << "cpp stderr: " << s; },
-					[&]() { stderr_closed.set_value(); }
-			));
+			boost::optional<int> ret_code;
+			preprocessor->AddListener(std::make_shared<FuncExecutableListener>([&](int retCode) { ret_code = retCode; }));
 
 			boost::regex include_re(R"(\s*#\s*include\s.*)");
-			IWriteBufferPtr preprocessor_stdin = preprocessor->GetStdin();
-
+			IPipeWriteEndPtr preprocessor_stdin = preprocessor->GetStdin();
 			std::ifstream src_file(_filename);
 			std::string line;
 			while (std::getline(src_file, line))
@@ -286,8 +260,6 @@ namespace hide
 			}
 			preprocessor_stdin->Close();
 
-			stdout_closed.get_future().wait();
-			stderr_closed.get_future().wait();
 			preprocessor.reset();
 
 			HIDE_CHECK(*ret_code == 0, std::runtime_error(StringBuilder() % "Preprocessor failed, ret code: " % *ret_code));

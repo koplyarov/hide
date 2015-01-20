@@ -10,10 +10,8 @@
 
 #include <hide/lang_plugins/CTagsInvoker.h>
 #include <hide/utils/Comparers.h>
-#include <hide/utils/Executable.h>
 #include <hide/utils/MembersVisitor.h>
 #include <hide/utils/PTree.h>
-#include <hide/utils/ReadBufferLinesListener.h>
 
 
 namespace hide

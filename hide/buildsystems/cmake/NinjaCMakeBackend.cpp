@@ -10,7 +10,7 @@
 #include <hide/utils/Executable.h>
 #include <hide/utils/FileSystemUtils.h>
 #include <hide/utils/NamedLogger.h>
-#include <hide/utils/ReadBufferLinesListener.h>
+#include <hide/utils/PipeLinesReader.h>
 
 
 namespace hide
@@ -42,19 +42,18 @@ namespace hide
 			StringArray result;
 			regex re("^([^:]+):.*$");
 
-			ExecutablePtr ninja = std::make_shared<Executable>("ninja", params);
+			ExecutablePtr ninja = std::make_shared<Executable>("ninja", params,
+					std::make_shared<PipeLinesReader>(
+						[&](const std::string& s)
+						{
+							smatch m;
+							if (regex_match(s, m, re))
+								result.push_back(m[1]);
+						}
+					),
+					s_logger
+				);
 			ninja->GetStdin()->Close();
-			std::promise<void> stdout_closed;
-			ninja->GetStdout()->AddListener(std::make_shared<ReadBufferLinesListener>(
-					[&](const std::string& s)
-					{
-						smatch m;
-						if (regex_match(s, m, re))
-							result.push_back(m[1]);
-					},
-					[&]() { stdout_closed.set_value(); }
-				));
-			stdout_closed.get_future().wait();
 			ninja.reset();
 
 			return result;

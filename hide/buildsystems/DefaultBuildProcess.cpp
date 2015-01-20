@@ -2,7 +2,7 @@
 
 #include <boost/regex.hpp>
 
-#include <hide/utils/ReadBufferLinesListener.h>
+#include <hide/utils/PipeLinesReader.h>
 
 
 namespace hide
@@ -27,14 +27,10 @@ namespace hide
 
 
 	DefaultBuildProcess::DefaultBuildProcess(const std::string& executable, const StringArray& parameters)
-		: _interrupted(false), _stdoutClosed(false)
+		: _interrupted(false)
 	{
-		_executable = std::make_shared<Executable>(executable, parameters);
+		_executable = std::make_shared<Executable>(executable, parameters, std::make_shared<PipeLinesReader>(std::bind(&DefaultBuildProcess::ParseLine, this, std::placeholders::_1)), s_logger);
 		_executable->GetStdin()->Close();
-		_executable->GetStdout()->AddListener(std::make_shared<ReadBufferLinesListener>(
-				std::bind(&DefaultBuildProcess::ParseLine, this, std::placeholders::_1),
-				std::bind(&DefaultBuildProcess::PipeClosedHandler, this, std::ref(_stdoutClosed))
-			));
 		_executable->AddListener(std::make_shared<ExecutableListener>(this));
 		s_logger.Info() << "Created";
 	}
@@ -83,32 +79,15 @@ namespace hide
 	}
 
 
-	void DefaultBuildProcess::PipeClosedHandler(bool& flag)
-	{
-		s_logger.Debug() << "DefaultBuildProcess::PipeClosedHandler(bool& flag)";
-		HIDE_LOCK(_mutex);
-		flag = true;
-		TryReportFinished();
-	}
-
-
 	void DefaultBuildProcess::SetRetCode(int retCode)
 	{
 		s_logger.Debug() << "DefaultBuildProcess::SetRetCode(" << retCode << ")";
 		HIDE_LOCK(_mutex);
 		_retCode = retCode;
-		TryReportFinished();
+		BuildStatus status = _interrupted ? BuildStatus::Interrupted : (*_retCode == 0 ? BuildStatus::Succeeded : BuildStatus::Failed);
+		s_logger.Info() << "Build " << status;
+		ReportFinished(status);
 	}
 
-
-	void DefaultBuildProcess::TryReportFinished()
-	{
-		if (_stdoutClosed && _retCode)
-		{
-			BuildStatus status = _interrupted ? BuildStatus::Interrupted : (*_retCode == 0 ? BuildStatus::Succeeded : BuildStatus::Failed);
-			s_logger.Info() << "Build " << status;
-			ReportFinished(status);
-		}
-	}
 
 }
