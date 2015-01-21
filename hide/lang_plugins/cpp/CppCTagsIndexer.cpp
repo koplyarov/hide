@@ -106,7 +106,7 @@ namespace hide
 	};
 
 
-	static std::set<std::string> GetFileDefines(const std::string& filename)
+	std::set<std::string> CppCTagsIndexer::GetFileDefines(const std::string& filename)
 	{
 		boost::regex re(R"(\s*#\s*define\s+([A-Za-z_][A-Za-z0-9_]*).*)");
 
@@ -125,7 +125,7 @@ namespace hide
 	}
 
 
-	static StringArray GetStdIncludePaths()
+	StringArray CppCTagsIndexer::GetStdIncludePaths()
 	{
 		StringArray result;
 		bool include_paths_section = false;
@@ -156,19 +156,103 @@ namespace hide
 	}
 
 
-	/*
-	 * cpp -xc++ $BUILTIN_INCLUDES $PROJECT_INCLUDES -dM -o - srcfile | filter_src_defines > tmpfile.pp
-	 * grep -v "^#\s*include" srcfile | cpp -w -include tmpfile.pp -o tmpfile.cpp
-	 */
-	IPartialIndexPtr CppCTagsIndexer::BuildIndex()
+	void CppCTagsIndexer::GenerateIncludeFile(const boost::filesystem::path& dst)
 	{
-		using namespace boost::filesystem;
-
-		std::set<std::string> file_defines = GetFileDefines(_filename);
-
 		StringArray std_include_paths = GetStdIncludePaths();
 		if (std_include_paths.empty())
 			s_logger.Warning() << "Empty default include paths!";
+
+		std::set<std::string> file_defines = GetFileDefines(_filename);
+
+		StringArray preprocessor_params = { "-xc++", "-std=c++11", "-DHIDE_PLATFORM_POSIX", "-I.", "-dM", "-o-", _filename };
+		boost::transform(std_include_paths, std::back_inserter(preprocessor_params), [](const std::string& s) { return "-I" + s; });
+
+		boost::regex define_re(R"(\s*#\s*define\s+([A-Za-z_][A-Za-z0-9_]*).*)");
+		std::ofstream file_to_include_f(dst.string(), std::ios::binary | std::ios::out);
+
+		ExecutablePtr preprocessor = std::make_shared<Executable>("cpp", preprocessor_params,
+			std::make_shared<PipeLinesReader>(
+				[&](const std::string& s)
+				{
+					boost::smatch m;
+					if (!boost::regex_match(s, m, define_re))
+					{
+						s_logger.Warning() << "'" << s << "' is not a valid define!";
+						return;
+					}
+					if (file_defines.find(m[1]) == file_defines.end())
+						file_to_include_f << s << "\n";
+				}),
+			s_logger
+		);
+
+		boost::optional<int> ret_code;
+		preprocessor->AddListener(std::make_shared<FuncExecutableListener>([&](int retCode) { ret_code = retCode; }));
+
+		preprocessor->GetStdin()->Close();
+		preprocessor.reset();
+
+		HIDE_CHECK(*ret_code == 0, std::runtime_error(StringBuilder() % "Preprocessor failed, ret code: " % *ret_code));
+	}
+
+
+	void CppCTagsIndexer::PreprocessFile(const boost::filesystem::path& includeFile, const boost::filesystem::path& dst)
+	{
+		StringArray preprocessor_params = { "-w", "-xc++", "-std=c++11", "-include", includeFile.string(), "-o-", "-" };
+
+		boost::regex pp_stuff_re(R"X(\s*#\s+(\d+)\s+"([^"]+)".*)X"); // " This comment fixes vim syntax highlight =)
+		std::ofstream preprocessor_result_f(dst.string(), std::ios::binary | std::ios::out);
+		int line_num = 1;
+		ExecutablePtr preprocessor = std::make_shared<Executable>("cpp", preprocessor_params,
+			std::make_shared<PipeLinesReader>(
+				[&](const std::string& s)
+				{
+					boost::smatch m;
+					if (!boost::regex_match(s, m, pp_stuff_re))
+					{
+						preprocessor_result_f << s << "\n";
+						++line_num;
+					}
+					else if (m[2] == "<stdin>")
+					{
+						int set_next_line_num = std::stoi(m[1]);
+						if (set_next_line_num < line_num)
+							s_logger.Warning() << "Invalid line_num in preprocessor output!";
+						else
+							for (; line_num < set_next_line_num; ++line_num)
+								preprocessor_result_f << "\n";
+					}
+				}),
+			s_logger
+		);
+
+		boost::optional<int> ret_code;
+		preprocessor->AddListener(std::make_shared<FuncExecutableListener>([&](int retCode) { ret_code = retCode; }));
+
+		boost::regex include_re(R"(\s*#\s*include\s.*)");
+		IPipeWriteEndPtr preprocessor_stdin = preprocessor->GetStdin();
+		std::ifstream src_file(_filename);
+		std::string line;
+		while (std::getline(src_file, line))
+		{
+			std::string str;
+			boost::smatch m;
+			if (!boost::regex_match(line, m, include_re))
+				str = line;
+			str += "\n";
+			preprocessor_stdin->Write(ByteArray(str.begin(), str.end()));
+		}
+		preprocessor_stdin->Close();
+
+		preprocessor.reset();
+
+		HIDE_CHECK(*ret_code == 0, std::runtime_error(StringBuilder() % "Preprocessor failed, ret code: " % *ret_code));
+	}
+
+
+	IPartialIndexPtr CppCTagsIndexer::BuildIndex()
+	{
+		using namespace boost::filesystem;
 
 		path file_to_include = path(s_tempDirectory) / path(_filename + ".cppIndexer.inc");
 		BOOST_SCOPE_EXIT_ALL(&) {
@@ -181,96 +265,15 @@ namespace hide
 			RemoveFileAndParentDirectories(preprocessor_result, s_tempDirectory);
 		};
 
-		{
-			StringArray preprocessor_params = { "-xc++", "-std=c++11", "-DHIDE_PLATFORM_POSIX", "-I.", "-dM", "-o-", _filename };
-			boost::transform(std_include_paths, std::back_inserter(preprocessor_params), [](const std::string& s) { return "-I" + s; });
-
-			boost::regex define_re(R"(\s*#\s*define\s+([A-Za-z_][A-Za-z0-9_]*).*)");
-			std::ofstream file_to_include_f(file_to_include.string(), std::ios::binary | std::ios::out);
-
-			ExecutablePtr preprocessor = std::make_shared<Executable>("cpp", preprocessor_params,
-				std::make_shared<PipeLinesReader>(
-					[&](const std::string& s)
-					{
-						boost::smatch m;
-						if (!boost::regex_match(s, m, define_re))
-						{
-							s_logger.Warning() << "'" << s << "' is not a valid define!";
-							return;
-						}
-						if (file_defines.find(m[1]) == file_defines.end())
-							file_to_include_f << s << "\n";
-					}),
-				s_logger
-			);
-
-			boost::optional<int> ret_code;
-			preprocessor->AddListener(std::make_shared<FuncExecutableListener>([&](int retCode) { ret_code = retCode; }));
-
-			preprocessor->GetStdin()->Close();
-			preprocessor.reset();
-
-			HIDE_CHECK(*ret_code == 0, std::runtime_error(StringBuilder() % "Preprocessor failed, ret code: " % *ret_code));
-		}
-
-		{
-			StringArray preprocessor_params = { "-w", "-xc++", "-std=c++11", "-include", file_to_include.string(), "-o-", "-" };
-
-			boost::regex pp_stuff_re(R"X(\s*#\s+(\d+)\s+"([^"]+)".*)X"); // " This comment fixes vim syntax highlight =)
-			std::ofstream preprocessor_result_f(preprocessor_result.string(), std::ios::binary | std::ios::out);
-			int line_num = 1;
-			ExecutablePtr preprocessor = std::make_shared<Executable>("cpp", preprocessor_params,
-				std::make_shared<PipeLinesReader>(
-					[&](const std::string& s)
-					{
-						boost::smatch m;
-						if (!boost::regex_match(s, m, pp_stuff_re))
-						{
-							preprocessor_result_f << s << "\n";
-							++line_num;
-						}
-						else if (m[2] == "<stdin>")
-						{
-							int set_next_line_num = std::stoi(m[1]);
-							if (set_next_line_num < line_num)
-								s_logger.Warning() << "Invalid line_num in preprocessor output!";
-							else
-								for (; line_num < set_next_line_num; ++line_num)
-									preprocessor_result_f << "\n";
-						}
-					}),
-				s_logger
-			);
-
-			boost::optional<int> ret_code;
-			preprocessor->AddListener(std::make_shared<FuncExecutableListener>([&](int retCode) { ret_code = retCode; }));
-
-			boost::regex include_re(R"(\s*#\s*include\s.*)");
-			IPipeWriteEndPtr preprocessor_stdin = preprocessor->GetStdin();
-			std::ifstream src_file(_filename);
-			std::string line;
-			while (std::getline(src_file, line))
-			{
-				std::string str;
-				boost::smatch m;
-				if (!boost::regex_match(line, m, include_re))
-					str = line;
-				str += "\n";
-				preprocessor_stdin->Write(ByteArray(str.begin(), str.end()));
-			}
-			preprocessor_stdin->Close();
-
-			preprocessor.reset();
-
-			HIDE_CHECK(*ret_code == 0, std::runtime_error(StringBuilder() % "Preprocessor failed, ret code: " % *ret_code));
-		}
+		GenerateIncludeFile(file_to_include);
+		PreprocessFile(file_to_include, preprocessor_result);
 
 		IIndexEntryPtrArray entries;
 
 		StringArray scope_fields = { "class", "struct", "namespace" };
 		std::map<std::string, IndexEntryKind> kinds_map = { { "class", IndexEntryKind::Type }, { "struct", IndexEntryKind::Type }, { "member", IndexEntryKind::Variable }, { "function", IndexEntryKind::Function } };
 
-		CTagsInvoker({ "-f-", "--excmd=number", "--sort=no", "--fields=+aimSztK", preprocessor_result.string() },
+		auto tag_entry_builder =
 				[&](const std::string& name, int line, const CTagsOutputParser::FieldsMap& fields)
 				{
 					std::string scope;
@@ -289,8 +292,10 @@ namespace hide
 					IndexEntryKind kind = k_it != kinds_map.end() ? k_it->second : IndexEntryKind();
 
 					entries.push_back(std::make_shared<CppCTagsIndexEntry>(name, scope, kind, Location(_filename, line, 1)));
-				}
-			);
+				};
+
+		CTagsInvoker({ "-f-", "--excmd=number", "--sort=no", "--fields=+aimSztK", "--c-kinds=+p", preprocessor_result.string() }, tag_entry_builder);
+		CTagsInvoker({ "-f-", "--excmd=number", "--sort=no", "--fields=+aimSztK", "--c-kinds=d", _filename }, tag_entry_builder);
 
 		return std::make_shared<CppCTagsPartialIndex>(entries);
 	}
