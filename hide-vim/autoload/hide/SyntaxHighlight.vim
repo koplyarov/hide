@@ -24,8 +24,8 @@ if !exists('s:BufferHighlighterPrototype')
 		highlight link HideHighlightNamedConstant Variable
 		highlight link HideHighlightVariable Variable
 		highlight link HideHighlightFunction Function
-		highlight link HideHighlightType DefinedName
-		highlight link HideHighlightKeyword Type
+		highlight link HideHighlightType Type
+		highlight link HideHighlightKeyword Keyword
 	endf
 
 	function s:BufferHighlighterPrototype._UnlinkHighlights()

@@ -164,8 +164,11 @@ namespace hide
 
 		std::set<std::string> file_defines = GetFileDefines(_filename);
 
-		StringArray preprocessor_params = { "-xc++", "-std=c++11", "-DHIDE_PLATFORM_POSIX", "-I.", "-dM", "-o-", _filename };
+		StringArray preprocessor_params = { "-xc++", "-dM", "-o-", _filename };
 		boost::transform(std_include_paths, std::back_inserter(preprocessor_params), [](const std::string& s) { return "-I" + s; });
+
+		// TODO: get these parameters from somewhere else
+		preprocessor_params.insert(preprocessor_params.end(), { "-DHIDE_PLATFORM_POSIX=1", "-Dhide_EXPORTS", "-I/usr/include/python2.7", "-I/usr/include/x86_64-linux-gnu/python2.7", "-I/usr/lib/llvm-3.5/include", "-I.", "-std=c++11" });
 
 		boost::regex define_re(R"(\s*#\s*define\s+([A-Za-z_][A-Za-z0-9_]*).*)");
 		std::ofstream file_to_include_f(dst.string(), std::ios::binary | std::ios::out);
@@ -254,24 +257,10 @@ namespace hide
 	{
 		using namespace boost::filesystem;
 
-		path file_to_include = path(s_tempDirectory) / path(_filename + ".cppIndexer.inc");
-		BOOST_SCOPE_EXIT_ALL(&) {
-			RemoveFileAndParentDirectories(file_to_include, s_tempDirectory);
-		};
-
-		path preprocessor_result = path(s_tempDirectory) / path(_filename + ".cppIndexer.cpp");
-		boost::filesystem::create_directories(preprocessor_result.parent_path());
-		BOOST_SCOPE_EXIT_ALL(&) {
-			RemoveFileAndParentDirectories(preprocessor_result, s_tempDirectory);
-		};
-
-		GenerateIncludeFile(file_to_include);
-		PreprocessFile(file_to_include, preprocessor_result);
-
 		IIndexEntryPtrArray entries;
 
 		StringArray scope_fields = { "class", "struct", "namespace" };
-		std::map<std::string, IndexEntryKind> kinds_map = { { "class", IndexEntryKind::Type }, { "struct", IndexEntryKind::Type }, { "member", IndexEntryKind::Variable }, { "function", IndexEntryKind::Function } };
+		std::map<std::string, IndexEntryKind> kinds_map = { { "typedef", IndexEntryKind::Type }, { "class", IndexEntryKind::Type }, { "struct", IndexEntryKind::Type }, { "member", IndexEntryKind::Variable }, { "function", IndexEntryKind::Function } };
 
 		auto tag_entry_builder =
 				[&](const std::string& name, int line, const CTagsOutputParser::FieldsMap& fields)
@@ -294,8 +283,31 @@ namespace hide
 					entries.push_back(std::make_shared<CppCTagsIndexEntry>(name, scope, kind, Location(_filename, line, 1)));
 				};
 
-		CTagsInvoker({ "-f-", "--excmd=number", "--sort=no", "--fields=+aimSztK", "--c-kinds=+p", preprocessor_result.string() }, tag_entry_builder);
-		CTagsInvoker({ "-f-", "--excmd=number", "--sort=no", "--fields=+aimSztK", "--c-kinds=d", _filename }, tag_entry_builder);
+		try
+		{
+			path file_to_include = path(s_tempDirectory) / path(_filename + ".cppIndexer.inc");
+			BOOST_SCOPE_EXIT_ALL(&) {
+				RemoveFileAndParentDirectories(file_to_include, s_tempDirectory);
+			};
+
+			path preprocessor_result = path(s_tempDirectory) / path(_filename + ".cppIndexer.cpp");
+			boost::filesystem::create_directories(preprocessor_result.parent_path());
+			BOOST_SCOPE_EXIT_ALL(&) {
+				RemoveFileAndParentDirectories(preprocessor_result, s_tempDirectory);
+			};
+
+			GenerateIncludeFile(file_to_include);
+			PreprocessFile(file_to_include, preprocessor_result);
+
+			CTagsInvoker({ "-f-", "--excmd=number", "--sort=no", "--fields=+aimSztK", "--c-kinds=+p", preprocessor_result.string() }, tag_entry_builder);
+			CTagsInvoker({ "-f-", "--excmd=number", "--sort=no", "--fields=+aimSztK", "--c-kinds=d", _filename }, tag_entry_builder);
+		}
+		catch (const std::exception& ex)
+		{
+			s_logger.Warning() << "Could get tags from the preprocessed file: " << ex;
+			entries.clear();
+			CTagsInvoker({ "-f-", "--excmd=number", "--sort=no", "--fields=+aimSztK", _filename }, tag_entry_builder);
+		}
 
 		return std::make_shared<CppCTagsPartialIndex>(entries);
 	}
