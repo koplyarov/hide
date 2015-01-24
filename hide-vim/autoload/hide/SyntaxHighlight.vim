@@ -21,18 +21,26 @@ if !exists('s:BufferHighlighterPrototype')
 	endf
 
 	function s:BufferHighlighterPrototype._LinkHighlights()
+		highlight link HideHighlightUnknown Variable
+		highlight link HideHighlightConstant Constant
 		highlight link HideHighlightNamedConstant Variable
 		highlight link HideHighlightVariable Variable
+		highlight link HideHighlightMacro Macro
 		highlight link HideHighlightFunction Function
 		highlight link HideHighlightType Type
+		highlight link HideHighlightNamespace Type
 		highlight link HideHighlightKeyword Keyword
 	endf
 
 	function s:BufferHighlighterPrototype._UnlinkHighlights()
+		highlight link HideHighlightUnknown NONE
+		highlight link HideHighlightConstant NONE
 		highlight link HideHighlightNamedConstant NONE
 		highlight link HideHighlightVariable NONE
+		highlight link HideHighlightMacro NONE
 		highlight link HideHighlightFunction NONE
 		highlight link HideHighlightType NONE
+		highlight link HideHighlightNamespace NONE
 		highlight link HideHighlightKeyword NONE
 	endf
 

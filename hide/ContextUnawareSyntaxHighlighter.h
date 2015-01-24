@@ -14,7 +14,7 @@ namespace hide
 
 	struct WordCategory
 	{
-		HIDE_ENUM_VALUES(NoneCategory, NamedConstant, Variable, Function, Type, Keyword);
+		HIDE_ENUM_VALUES(NoneCategory, Unknown, Constant, NamedConstant, Variable, Function, Namespace, Type, Keyword, Macro);
 		HIDE_ENUM_CLASS(WordCategory);
 
 		HIDE_DECLARE_SWIG_TO_STRING_WRAPPER();

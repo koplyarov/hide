@@ -259,8 +259,19 @@ namespace hide
 
 		IIndexEntryPtrArray entries;
 
-		StringArray scope_fields = { "class", "struct", "namespace" };
-		std::map<std::string, IndexEntryKind> kinds_map = { { "typedef", IndexEntryKind::Type }, { "class", IndexEntryKind::Type }, { "struct", IndexEntryKind::Type }, { "member", IndexEntryKind::Variable }, { "function", IndexEntryKind::Function } };
+		StringArray scope_fields = { "class", "struct", "namespace", "enum" };
+		std::map<std::string, IndexEntryKind> kinds_map =
+			{
+				{ "namespace",	IndexEntryKind::Namespace },
+				{ "typedef",	IndexEntryKind::Type },
+				{ "class",		IndexEntryKind::Type },
+				{ "struct",		IndexEntryKind::Type },
+				{ "enum",		IndexEntryKind::Type },
+				{ "member",		IndexEntryKind::Variable },
+				{ "function",	IndexEntryKind::Function },
+				{ "prototype",	IndexEntryKind::Function },
+				{ "macro",		IndexEntryKind::Macro }
+			};
 
 		auto tag_entry_builder =
 				[&](const std::string& name, int line, const CTagsOutputParser::FieldsMap& fields)

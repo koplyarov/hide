@@ -15,7 +15,7 @@ namespace hide
 
 	struct IndexEntryKind
 	{
-		HIDE_ENUM_VALUES(NamedConstant, Variable, Function, Type);
+		HIDE_ENUM_VALUES(Unknown, Macro, NamedConstant, Variable, Function, Type, Namespace);
 		HIDE_ENUM_CLASS(IndexEntryKind);
 
 		HIDE_DECLARE_SWIG_TO_STRING_WRAPPER();

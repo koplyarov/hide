@@ -160,7 +160,7 @@ namespace hide
 			for (const auto& pi : indexer->_partialIndexes)
 				for (const auto& e : pi.second->Index->GetEntries())
 					if (_checkEntryFunc(e))
-						ReportEntry(IndexQueryEntry(e->GetFullName(), e->GetLocation()));
+						ReportEntry(IndexQueryEntry(e->GetFullName(), e->GetLocation(), e->GetKind()));
 
 			ReportFinished();
 		}
@@ -184,7 +184,7 @@ namespace hide
 		{
 			auto range = (indexer->*_stringToIndexEntryMember).equal_range(_string);
 			for (auto it = range.first; it != range.second; ++it)
-				ReportEntry(IndexQueryEntry(it->second->GetFullName(), it->second->GetLocation()));
+				ReportEntry(IndexQueryEntry(it->second->GetFullName(), it->second->GetLocation(), it->second->GetKind()));
 
 			ReportFinished();
 		}

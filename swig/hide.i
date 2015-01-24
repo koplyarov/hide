@@ -105,6 +105,11 @@ using namespace hide;
 %shared_ptr(hide::CMakeBuildConfig)
 %include <hide/buildsystems/cmake/CMakeBuildConfig.h>
 
+%shared_ptr(hide::IIndexEntry)
+%template(IIndexEntryVector) std::vector<std::shared_ptr<hide::IIndexEntry> >;
+%shared_ptr(hide::IPartialIndex)
+%include <hide/IPartialIndex.h>
+
 %feature("director") hide::IIndexQueryListener;
 %copyctor hide::IndexQueryEntry;
 %shared_ptr(hide::IIndexQueryListener)

@@ -4,6 +4,7 @@
 
 #include <string>
 
+#include <hide/IPartialIndex.h>
 #include <hide/Location.h>
 #include <hide/utils/Utils.h>
 
@@ -16,14 +17,16 @@ namespace hide
 	private:
 		std::string		_name;
 		Location		_location;
+		IndexEntryKind	_kind;
 
 	public:
-		IndexQueryEntry(const std::string& name, const Location& location)
-			: _name(name), _location(location)
+		IndexQueryEntry(const std::string& name, const Location& location, IndexEntryKind kind)
+			: _name(name), _location(location), _kind(kind)
 		{ }
 
 		std::string GetName() const		{ return _name; }
 		Location GetLocation() const	{ return _location; }
+		IndexEntryKind GetKind() const	{ return _kind; }
 	};
 	HIDE_DECLARE_ARRAY(IndexQueryEntry);
 
