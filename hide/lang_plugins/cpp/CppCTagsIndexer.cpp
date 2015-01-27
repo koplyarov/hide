@@ -5,6 +5,7 @@
 #include <set>
 
 #include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/optional.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -26,8 +27,8 @@ namespace hide
 
 	HIDE_NAMED_LOGGER(CppCTagsIndexer);
 
-	CppCTagsIndexer::CppCTagsIndexer(const std::string& filename)
-		: _filename(filename)
+	CppCTagsIndexer::CppCTagsIndexer(const std::string& filename, const ICppCompilationInfoPtr& compilationInfo)
+		: _filename(filename), _compilationInfo(compilationInfo)
 	{ }
 
 
@@ -158,6 +159,8 @@ namespace hide
 
 	void CppCTagsIndexer::GenerateIncludeFile(const boost::filesystem::path& dst)
 	{
+		using namespace boost;
+
 		StringArray std_include_paths = GetStdIncludePaths();
 		if (std_include_paths.empty())
 			s_logger.Warning() << "Empty default include paths!";
@@ -167,8 +170,10 @@ namespace hide
 		StringArray preprocessor_params = { "-xc++", "-dM", "-o-", _filename };
 		boost::transform(std_include_paths, std::back_inserter(preprocessor_params), [](const std::string& s) { return "-I" + s; });
 
-		// TODO: get these parameters from somewhere else
-		preprocessor_params.insert(preprocessor_params.end(), { "-DHIDE_PLATFORM_POSIX=1", "-Dhide_EXPORTS", "-I/usr/include/python2.7", "-I/usr/include/x86_64-linux-gnu/python2.7", "-I/usr/lib/llvm-3.5/include", "-I.", "-std=c++11" });
+		StringArray compilation_options = _compilationInfo->GetOptions(_filename);
+		compilation_options.erase(remove_if(compilation_options, [](const std::string& s){ return !(starts_with(s, "-I") || starts_with(s, "-D") || starts_with(s, "-std=")); }), compilation_options.end());
+		s_logger.Info() << "compilation_options: " << compilation_options;
+		copy(compilation_options, std::back_inserter(preprocessor_params));
 
 		boost::regex define_re(R"(\s*#\s*define\s+([A-Za-z_][A-Za-z0-9_]*).*)");
 		std::ofstream file_to_include_f(dst.string(), std::ios::binary | std::ios::out);
@@ -310,14 +315,14 @@ namespace hide
 			GenerateIncludeFile(file_to_include);
 			PreprocessFile(file_to_include, preprocessor_result);
 
-			CTagsInvoker({ "-f-", "--excmd=number", "--sort=no", "--fields=+aimSztK", "--c-kinds=+p", preprocessor_result.string() }, tag_entry_builder);
-			CTagsInvoker({ "-f-", "--excmd=number", "--sort=no", "--fields=+aimSztK", "--c-kinds=d", _filename }, tag_entry_builder);
+			CTagsInvoker({ "--language-force=c++", "-f-", "--excmd=number", "--sort=no", "--fields=+aimSztK", "--c-kinds=+p", preprocessor_result.string() }, tag_entry_builder);
+			CTagsInvoker({ "--language-force=c++", "-f-", "--excmd=number", "--sort=no", "--fields=+aimSztK", "--c-kinds=d", _filename }, tag_entry_builder);
 		}
 		catch (const std::exception& ex)
 		{
 			s_logger.Warning() << "Could get tags from the preprocessed file: " << ex;
 			entries.clear();
-			CTagsInvoker({ "-f-", "--excmd=number", "--sort=no", "--fields=+aimSztK", _filename }, tag_entry_builder);
+			CTagsInvoker({ "--language-force=c++", "-f-", "--excmd=number", "--sort=no", "--fields=+aimSztK", _filename }, tag_entry_builder);
 		}
 
 		return std::make_shared<CppCTagsPartialIndex>(entries);

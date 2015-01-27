@@ -3,6 +3,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/range/algorithm.hpp>
 
+#include <hide/lang_plugins/cpp/CompileCommandsJsonCompilationInfo.h>
 #include <hide/lang_plugins/cpp/File.h>
 
 
@@ -11,6 +12,7 @@ namespace cpp
 {
 
 	LanguagePlugin::LanguagePlugin()
+		: _compilationInfo(new CompileCommandsJsonCompilationInfo("compile_commands.json"))
 	{
 	}
 
@@ -28,7 +30,7 @@ namespace cpp
 
 		std::vector<std::string> extensions = { ".h", ".hpp", ".c", ".cpp" };
 		if (find(extensions, path(filename).extension().string()) != extensions.end())
-			return std::make_shared<File>(filename);
+			return std::make_shared<File>(filename, _compilationInfo);
 		return nullptr;
 	}
 

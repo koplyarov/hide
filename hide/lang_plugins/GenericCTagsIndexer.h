@@ -13,10 +13,11 @@ namespace hide
 	{
 	private:
 		static NamedLogger	s_logger;
+		std::string			_language;
 		std::string			_filename;
 
 	public:
-		GenericCTagsIndexer(const std::string& filename);
+		GenericCTagsIndexer(const std::string& language, const std::string& filename);
 
 		virtual IPartialIndexPtr BuildIndex();
 		virtual IPartialIndexPtr LoadIndex(const std::string& filename);

@@ -95,8 +95,8 @@ namespace hide
 
 	HIDE_NAMED_LOGGER(GenericCTagsIndexer);
 
-	GenericCTagsIndexer::GenericCTagsIndexer(const std::string& filename)
-		: _filename(filename)
+	GenericCTagsIndexer::GenericCTagsIndexer(const std::string& language, const std::string& filename)
+		: _language(language), _filename(filename)
 	{ }
 
 
@@ -107,7 +107,7 @@ namespace hide
 		StringArray scope_fields = { "class", "struct", "namespace" };
 		std::map<std::string, IndexEntryKind> kinds_map = { { "class", IndexEntryKind::Type }, { "struct", IndexEntryKind::Type }, { "member", IndexEntryKind::Variable }, { "function", IndexEntryKind::Function } };
 
-		CTagsInvoker({ "-f-", "--excmd=number", "--sort=no", "--fields=+aimSztK", _filename },
+		CTagsInvoker({ "--language-force=" + _language, "-f-", "--excmd=number", "--sort=no", "--fields=+aimSztK", _filename },
 				[&](const std::string& name, int line, const CTagsOutputParser::FieldsMap& fields)
 				{
 					std::string scope;

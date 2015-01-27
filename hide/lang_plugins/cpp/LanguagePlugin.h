@@ -3,6 +3,7 @@
 
 
 #include <hide/ILanguagePlugin.h>
+#include <hide/lang_plugins/cpp/ICppCompilationInfo.h>
 
 
 namespace hide {
@@ -12,7 +13,7 @@ namespace cpp
 	class LanguagePlugin : public virtual ILanguagePlugin
 	{
 	private:
-		/* data */
+		ICppCompilationInfoPtr		_compilationInfo;
 
 	public:
 		LanguagePlugin();

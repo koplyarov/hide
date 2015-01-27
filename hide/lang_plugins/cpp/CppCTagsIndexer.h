@@ -7,6 +7,7 @@
 #include <boost/filesystem.hpp>
 
 #include <hide/IPartialIndexer.h>
+#include <hide/lang_plugins/cpp/ICppCompilationInfo.h>
 #include <hide/utils/NamedLogger.h>
 
 
@@ -19,9 +20,10 @@ namespace hide
 		static NamedLogger			s_logger;
 		static const std::string	s_tempDirectory;
 		std::string					_filename;
+		ICppCompilationInfoPtr		_compilationInfo;
 
 	public:
-		CppCTagsIndexer(const std::string& filename);
+		CppCTagsIndexer(const std::string& filename, const ICppCompilationInfoPtr& compilationInfo);
 
 		virtual IPartialIndexPtr BuildIndex();
 		virtual IPartialIndexPtr LoadIndex(const std::string& filename);

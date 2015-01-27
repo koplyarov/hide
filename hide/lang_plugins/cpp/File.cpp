@@ -36,8 +36,8 @@ namespace cpp
 	};
 
 
-	File::File(const std::string& filename)
-		: _filename(filename)
+	File::File(const std::string& filename, const ICppCompilationInfoPtr& compilationInfo)
+		: _filename(filename), _compilationInfo(compilationInfo)
 	{ }
 
 
@@ -50,6 +50,6 @@ namespace cpp
 
 
 	IPartialIndexerPtr File::GetIndexer()
-	{ return std::make_shared<CppCTagsIndexer>(_filename); }
+	{ return std::make_shared<CppCTagsIndexer>(_filename, _compilationInfo); }
 
 }}
