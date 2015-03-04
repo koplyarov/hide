@@ -4,6 +4,8 @@ cmake_minimum_required(VERSION 2.6)
 find_package(SWIG REQUIRED)
 include(${SWIG_USE_FILE})
 
+find_package(Threads)
+
 find_package(PythonLibs REQUIRED)
 
 find_package(Boost REQUIRED COMPONENTS
@@ -67,6 +69,7 @@ target_link_libraries(hide
 	${Boost_FILESYSTEM_LIBRARY}
 	${Boost_EXCEPTION_LIBRARY}
 	${LibClang_LIBRARIES}
+	${CMAKE_THREAD_LIBS_INIT}
 )
 
 ######################################################################
