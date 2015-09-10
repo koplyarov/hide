@@ -40,7 +40,6 @@
 #include <hide/Location.h>
 #include <hide/Project.h>
 #include <hide/buildsystems/cmake/CMakeBuildConfig.h>
-using namespace hide;
 %}
 
 %template(StringVector) std::vector<std::string>;
@@ -81,6 +80,16 @@ using namespace hide;
 %shared_ptr(hide::IComparable)
 %include <hide/utils/IComparable.h>
 
+%feature("director") hide::IPartialIndex;
+%shared_ptr(hide::IIndexEntry)
+%template(IIndexEntryVector) std::vector<std::shared_ptr<hide::IIndexEntry> >;
+%shared_ptr(hide::IPartialIndex)
+%include <hide/IPartialIndex.h>
+
+%feature("director") hide::IPartialIndexer;
+%shared_ptr(hide::IPartialIndexer)
+%include <hide/IPartialIndexer.h>
+
 %feature("director") hide::IIndexableId;
 %shared_ptr(hide::IIndexableId)
 %feature("director") hide::IIndexable;
@@ -105,11 +114,6 @@ using namespace hide;
 %shared_ptr(hide::CMakeBuildConfig)
 %include <hide/buildsystems/cmake/CMakeBuildConfig.h>
 
-%shared_ptr(hide::IIndexEntry)
-%template(IIndexEntryVector) std::vector<std::shared_ptr<hide::IIndexEntry> >;
-%shared_ptr(hide::IPartialIndex)
-%include <hide/IPartialIndex.h>
-
 %feature("director") hide::IIndexQueryListener;
 %copyctor hide::IndexQueryEntry;
 %shared_ptr(hide::IIndexQueryListener)
@@ -119,6 +123,7 @@ using namespace hide;
 %feature("director") hide::IIndexerListener;
 %shared_ptr(hide::IIndexerListener)
 %shared_ptr(hide::Indexer)
+%ignore hide::Indexer::Indexer;
 %include <hide/Indexer.h>
 
 %feature("director") hide::IContextUnawareSyntaxHighlighterListener;
