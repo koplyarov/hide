@@ -18,9 +18,6 @@ find_package(Boost REQUIRED COMPONENTS
 	exception
 )
 
-find_path(LibClang_INCLUDE_DIRS clang-c/Index.h HINTS /usr/lib/llvm-3.4/include /usr/lib/llvm-3.5/include)
-find_library(LibClang_LIBRARIES NAMES clang HINTS /usr/lib/llvm-3.4/lib /usr/lib/llvm-3.5/lib)
-
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 
@@ -52,7 +49,6 @@ set(hide_SRCS
 	hide/lang_plugins/cpp/CppCTagsIndexer.cpp
 	hide/lang_plugins/cpp/File.cpp
 	hide/lang_plugins/cpp/LanguagePlugin.cpp
-	hide/lang_plugins/cpp/clang/Index.cpp
 	hide/utils/Executable.cpp
 	hide/utils/FileSystemNotifier.cpp
 	hide/utils/FileSystemUtils.cpp
@@ -86,13 +82,3 @@ set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR}/bin)
 set_source_files_properties(${swig_SRCS} PROPERTIES CPLUSPLUS ON)
 swig_add_module(hide python ${swig_SRCS})
 swig_link_libraries(hide hide ${PYTHON_LIBRARIES})
-
-######################################################################
-
-set(test_SRCS
-	test.cpp
-)
-
-add_executable(hide-test WIN32 ${test_SRCS})
-
-target_link_libraries(hide-test hide)
