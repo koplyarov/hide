@@ -172,7 +172,6 @@ namespace hide
 
 		StringArray compilation_options = _compilationInfo->GetOptions(_filename);
 		compilation_options.erase(remove_if(compilation_options, [](const std::string& s){ return !(starts_with(s, "-I") || starts_with(s, "-D") || starts_with(s, "-std=")); }), compilation_options.end());
-		s_logger.Info() << "compilation_options: " << compilation_options;
 		copy(compilation_options, std::back_inserter(preprocessor_params));
 
 		boost::regex define_re(R"(\s*#\s*define\s+([A-Za-z_][A-Za-z0-9_]*).*)");
@@ -320,7 +319,7 @@ namespace hide
 		}
 		catch (const std::exception& ex)
 		{
-			s_logger.Warning() << "Could get tags from the preprocessed file: " << ex;
+			s_logger.Warning() << "Could not get tags from the preprocessed file: " << ex;
 			entries.clear();
 			CTagsInvoker({ "--language-force=c++", "-f-", "--excmd=number", "--sort=no", "--fields=+aimSztK", _filename }, tag_entry_builder);
 		}
