@@ -72,6 +72,23 @@ target_link_libraries(hide
 
 ######################################################################
 
+set(hide_test_SRCS test.cpp)
+
+add_executable(hide_test ${hide_test_SRCS})
+
+target_link_libraries(hide_test
+	hide
+	${Boost_PROGRAM_OPTIONS_LIBRARY}
+	${Boost_REGEX_LIBRARY}
+	${Boost_SYSTEM_LIBRARY}
+	${Boost_FILESYSTEM_LIBRARY}
+	${Boost_EXCEPTION_LIBRARY}
+	${LibClang_LIBRARIES}
+	${CMAKE_THREAD_LIBS_INIT}
+)
+
+######################################################################
+
 set(swig_SRCS swig/hide.i)
 
 SET(SWIG_MODULE_hide_EXTRA_DEPS ${hide_SRCS})
