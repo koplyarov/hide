@@ -5,4 +5,4 @@ Fail() {
 
 [ $# -eq 1 ] || Fail "Usage: $0 <executable>"
 rm -rf ./.hide
-valgrind --tool=helgrind $1
+valgrind --suppressions=etc/valgrind-python.supp --tool=helgrind $1
