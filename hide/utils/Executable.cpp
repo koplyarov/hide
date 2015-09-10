@@ -210,6 +210,7 @@ namespace hide
 	{
 		s_logger.Debug() << "Destroying";
 		_thread.join();
+		s_logger.Debug() << "Destroyed";
 	}
 
 
