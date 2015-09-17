@@ -48,6 +48,7 @@
 
 %include <hide/utils/Utils.h>
 %include <hide/utils/MembersVisitor.h>
+%include <hide/utils/Diff.h>
 
 %ignore hide::MakeThread;
 %include <hide/utils/Thread.h>
@@ -83,6 +84,7 @@
 %feature("director") hide::IPartialIndex;
 %shared_ptr(hide::IIndexEntry)
 %template(IIndexEntryVector) std::vector<std::shared_ptr<hide::IIndexEntry> >;
+%template(IIndexEntryDiff) hide::Diff<std::shared_ptr<hide::IIndexEntry> >;
 %shared_ptr(hide::IPartialIndex)
 %include <hide/IPartialIndex.h>
 

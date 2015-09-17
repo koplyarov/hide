@@ -12,6 +12,7 @@
 #include <hide/IIndexable.h>
 #include <hide/ProjectFiles.h>
 #include <hide/utils/Comparers.h>
+#include <hide/utils/Diff.h>
 #include <hide/utils/NamedLogger.h>
 
 
@@ -22,8 +23,7 @@ namespace hide
 	{
 		virtual ~IIndexerListener() { }
 
-		virtual void OnEntryAdded(const IIndexEntryPtr& entry)		{ HIDE_PURE_VIRTUAL_CALL(); }
-		virtual void OnEntryRemoved(const IIndexEntryPtr& entry)	{ HIDE_PURE_VIRTUAL_CALL(); }
+		virtual void OnIndexChanged(const Diff<IIndexEntryPtr>& diff) { HIDE_PURE_VIRTUAL_CALL(); }
 	};
 	HIDE_DECLARE_PTR(IIndexerListener);
 

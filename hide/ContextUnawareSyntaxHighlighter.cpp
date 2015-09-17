@@ -21,16 +21,14 @@ namespace hide
 			: _inst(inst), _whitespaceRegex("\\s")
 		{ }
 
-		virtual void OnEntryAdded(const IIndexEntryPtr& entry)
+		virtual void OnIndexChanged(const Diff<IIndexEntryPtr>& diff)
 		{
-			if (EntryIsAWord(entry))
-				_inst->AddWord(entry->GetName(), GetCategory(entry));
-		}
-
-		virtual void OnEntryRemoved(const IIndexEntryPtr& entry)
-		{
-			if (EntryIsAWord(entry))
-				_inst->RemoveWord(entry->GetName(), GetCategory(entry));
+			for (auto&& entry : diff.GetRemoved())
+				if (EntryIsAWord(entry))
+					_inst->RemoveWord(entry->GetName(), GetCategory(entry));
+			for (auto&& entry : diff.GetAdded())
+				if (EntryIsAWord(entry))
+					_inst->AddWord(entry->GetName(), GetCategory(entry));
 		}
 
 	private:

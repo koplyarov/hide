@@ -260,8 +260,10 @@ namespace hide
 
 	void Indexer::PopulateState(const IIndexerListenerPtr& listener) const
 	{
+		Diff<IIndexEntryPtr>::ElementArray added;
 		for (const auto& s_pair : _symbolNameToSymbol)
-			listener->OnEntryAdded(s_pair.second);
+			added.push_back(s_pair.second);
+		listener->OnIndexChanged(Diff<IIndexEntryPtr>(added, {}));
 	}
 
 
@@ -449,11 +451,7 @@ namespace hide
 		boost::set_difference(old_entries, new_entries, std::inserter(removed_entries, removed_entries.begin()), Less());
 		boost::set_difference(new_entries, old_entries, std::inserter(added_entries, added_entries.begin()), Less());
 
-		for (const auto& e : removed_entries)
-			InvokeListeners(std::bind(&IIndexerListener::OnEntryRemoved, std::placeholders::_1, e));
-
-		for (const auto& e : added_entries)
-			InvokeListeners(std::bind(&IIndexerListener::OnEntryAdded, std::placeholders::_1, e));
+		InvokeListeners(std::bind(&IIndexerListener::OnIndexChanged, std::placeholders::_1, Diff<IIndexEntryPtr>(Diff<IIndexEntryPtr>::ElementArray(added_entries.begin(), added_entries.end()), Diff<IIndexEntryPtr>::ElementArray(removed_entries.begin(), removed_entries.end()))));
 	}
 
 
