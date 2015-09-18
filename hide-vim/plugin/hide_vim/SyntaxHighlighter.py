@@ -14,7 +14,7 @@ class SyntaxHighlighterListener(hide.IContextUnawareSyntaxHighlighterListener):
     def OnWordsChanged(self, diff):
         with self.__mutex:
             for w in diff.GetRemoved():
-                self.__words[w.GetWord()] = 'NoneCategory'
+                self.__words[w.GetWord()] = None
             for w in diff.GetAdded():
                 self.__words[w.GetWord()] = w.GetCategory()
 
@@ -42,8 +42,8 @@ class SyntaxHighlighter:
         if not words and not forceFullUpdate:
             return
 
-        added_words = { word: category for (word, category) in words.iteritems() if category != "NoneCategory" }
-        removed_words = [ (word, category) for (word, category) in words.iteritems() if category == "NoneCategory" ]
+        added_words = { word: category for (word, category) in words.iteritems() if not category is None }
+        removed_words = [ (word, category) for (word, category) in words.iteritems() if category is None ]
 
         for w, c in removed_words:
             del self.__words[w]

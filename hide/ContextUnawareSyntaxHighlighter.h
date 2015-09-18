@@ -16,7 +16,7 @@ namespace hide
 
 	struct SyntaxWordCategory
 	{
-		HIDE_ENUM_VALUES(NoneCategory, Unknown, Constant, NamedConstant, Variable, Function, Namespace, Type, Keyword, Macro);
+		HIDE_ENUM_VALUES(Unknown, Constant, NamedConstant, Variable, Function, Namespace, Type, Keyword, Macro);
 		HIDE_ENUM_CLASS(SyntaxWordCategory);
 
 		HIDE_DECLARE_SWIG_TO_STRING_WRAPPER();

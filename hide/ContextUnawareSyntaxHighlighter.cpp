@@ -160,7 +160,7 @@ namespace hide
 		case IndexEntryKind::Type:				return SyntaxWordCategory::Type;
 		case IndexEntryKind::Namespace:			return SyntaxWordCategory::Namespace;
 		case IndexEntryKind::Macro:				return SyntaxWordCategory::Macro;
-		default:								return SyntaxWordCategory::NoneCategory;
+		default:								return SyntaxWordCategory::Unknown;
 		}
 	}
 
