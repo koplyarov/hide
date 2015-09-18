@@ -20,9 +20,14 @@ namespace hide
 		ElementArray		_removed;
 
 	public:
+		Diff() { }
 		Diff(const ElementArray& added, const ElementArray& removed) : _added(added), _removed(removed) { }
+
 #ifndef SWIG
 		Diff(ElementArray&& added, ElementArray&& removed) : _added(added), _removed(removed) { }
+
+		ElementArray& GetAdded()		{ return _added; }
+		ElementArray& GetRemoved()		{ return _removed; }
 #endif
 
 		ElementArray GetAdded() const	{ return _added; }

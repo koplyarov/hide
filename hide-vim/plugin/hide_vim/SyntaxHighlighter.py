@@ -11,9 +11,12 @@ class SyntaxHighlighterListener(hide.IContextUnawareSyntaxHighlighterListener):
         self.__mutex = Lock()
         self.__words = dict()
 
-    def OnWordCategoryChanged(self, word, category):
+    def OnWordsChanged(self, diff):
         with self.__mutex:
-            self.__words[word] = category
+            for w in diff.GetRemoved():
+                self.__words[w.GetWord()] = 'NoneCategory'
+            for w in diff.GetAdded():
+                self.__words[w.GetWord()] = w.GetCategory()
 
     def GetChangedWords(self):
         with self.__mutex:
@@ -29,7 +32,7 @@ class SyntaxHighlighter:
         self.__highlighter = highlighter
         self.__highlighter.AddListener(self.__listener)
         self.__words = dict()
-        self.__bannedWords = { 'contains', 'oneline', 'fold', 'display', 'extend concealends' }
+        self.__bannedWords = { 'contains', 'oneline', 'fold', 'display', 'extend', 'concealends' }
 
     def __del__(self):
         self.__highlighter.RemoveListener(self.__listener)

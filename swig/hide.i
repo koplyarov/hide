@@ -131,7 +131,9 @@
 %feature("director") hide::IContextUnawareSyntaxHighlighterListener;
 %shared_ptr(hide::IContextUnawareSyntaxHighlighterListener)
 %shared_ptr(hide::ContextUnawareSyntaxHighlighter)
-%copyctor hide::WordCategory;
+%copyctor hide::SyntaxWordCategory;
+%template(SyntaxWordInfoArray) std::vector<hide::SyntaxWordInfo>;
+%template(SyntaxWordInfoDiff) hide::Diff<hide::SyntaxWordInfo>;
 %include <hide/ContextUnawareSyntaxHighlighter.h>
 
 %shared_ptr(hide::Buffer)
