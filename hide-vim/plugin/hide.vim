@@ -35,7 +35,7 @@ endf
 
 function s:SyncEverythingFrequent()
 	let now = localtime()
-	if !exists('s:lastSyncTime') || s:lastSyncTime != now
+	if mode() != 'V' && mode() != 'v' && mode() != "\<C-V>" && (!exists('s:lastSyncTime') || s:lastSyncTime != now)
 		try
 			call s:SyncEverything()
 		finally
@@ -183,6 +183,6 @@ command! -nargs=? -complete=file HideBuildFile call <SID>DoBuild('BuildFile("<ar
 command! -nargs=1 HideIndexQuery call <SID>DoStartQueryIndex('QuerySymbolsByName("<args>")')
 
 
-au CursorMoved,CursorMovedI,CmdWinEnter,CmdWinLeave * call <SID>SyncEverythingFrequent()
+au CursorMoved,CmdWinEnter,CmdWinLeave * call <SID>SyncEverythingFrequent()
 
 au BufNew,BufRead *.h,*.cpp call hide#SyntaxHighlight#EnableBufferSyntaxHighlighting()
