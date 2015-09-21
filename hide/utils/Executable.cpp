@@ -135,13 +135,13 @@ namespace hide
 		int in_pipe[2], out_pipe[2], err_pipe[2];
 
 		if (pipe(in_pipe) != 0)
-			BOOST_THROW_EXCEPTION(std::runtime_error("Could not open in_pipe"));
+			BOOST_THROW_EXCEPTION(std::system_error(errno, std::system_category(), "Could not open in_pipe"));
 
 		if (pipe(out_pipe) != 0)
 		{
 			close(in_pipe[read_index]);
 			close(in_pipe[write_index]);
-			BOOST_THROW_EXCEPTION(std::runtime_error("Could not open out_pipe"));
+			BOOST_THROW_EXCEPTION(std::system_error(errno, std::system_category(), "Could not open out_pipe"));
 		}
 
 		if (pipe(err_pipe) != 0)
@@ -150,7 +150,7 @@ namespace hide
 			close(in_pipe[write_index]);
 			close(out_pipe[read_index]);
 			close(out_pipe[write_index]);
-			BOOST_THROW_EXCEPTION(std::runtime_error("Could not open err_pipe"));
+			BOOST_THROW_EXCEPTION(std::system_error(errno, std::system_category(), "Could not open err_pipe"));
 		}
 
 		pid_t pid = fork();
@@ -224,7 +224,7 @@ namespace hide
 		{
 			if (errno == ESRCH)
 				return;
-			BOOST_THROW_EXCEPTION(std::runtime_error("Could not kill " + std::to_string(_pid) + " child process!"));
+			BOOST_THROW_EXCEPTION(std::system_error(errno, std::system_category(), "Could not kill " + std::to_string(_pid) + " child process!"));
 		}
 #else
 #	error Executable::Interrupt is not implemented
@@ -246,7 +246,7 @@ namespace hide
 
 		int status = 0, wpid = 0;
 		if ((wpid = waitpid(_pid, &status, 0)) < 0)
-			BOOST_THROW_EXCEPTION(std::runtime_error("waitpid failed"));
+			BOOST_THROW_EXCEPTION(std::system_error(errno, std::system_category(), "waitpid failed!"));
 
 		_stdout.reset();
 		_stderr.reset();
