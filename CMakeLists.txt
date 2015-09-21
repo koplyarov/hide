@@ -97,5 +97,7 @@ set(CMAKE_SWIG_FLAGS "-threads")
 set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
 set_source_files_properties(${swig_SRCS} PROPERTIES CPLUSPLUS ON)
+set_source_files_properties("bin/hidePYTHON_wrap.cxx" PROPERTIES COMPILE_FLAGS "-Wno-maybe-uninitialized")
+
 swig_add_module(hide python ${swig_SRCS})
 swig_link_libraries(hide hide ${PYTHON_LIBRARIES})
