@@ -29,7 +29,14 @@ if !exists('s:BufferHighlighterPrototype')
 		highlight link HideHighlightFunction Function
 		highlight link HideHighlightType Type
 		highlight link HideHighlightNamespace Type
+		highlight link HideHighlightStatement Statement
+		highlight link HideHighlightConditional Conditional
+		highlight link HideHighlightRepeat Repeat
+		highlight link HideHighlightLabel Label
+		highlight link HideHighlightOperator Operator
+		highlight link HideHighlightException Exception
 		highlight link HideHighlightKeyword Keyword
+		highlight link HideHighlightImport Import
 	endf
 
 	function s:BufferHighlighterPrototype._UnlinkHighlights()
@@ -41,7 +48,14 @@ if !exists('s:BufferHighlighterPrototype')
 		highlight link HideHighlightFunction NONE
 		highlight link HideHighlightType NONE
 		highlight link HideHighlightNamespace NONE
+		highlight link HideHighlightStatement NONE
+		highlight link HideHighlightConditional NONE
+		highlight link HideHighlightRepeat NONE
+		highlight link HideHighlightLabel NONE
+		highlight link HideHighlightOperator NONE
+		highlight link HideHighlightException NONE
 		highlight link HideHighlightKeyword NONE
+		highlight link HideHighlightImport NONE
 	endf
 
 	function s:BufferHighlighterPrototype._ResetHighlightsInCurWindow()
