@@ -185,4 +185,4 @@ command! -nargs=1 HideIndexQuery call <SID>DoStartQueryIndex('QuerySymbolsByName
 
 au CursorMoved,CmdWinEnter,CmdWinLeave * call <SID>SyncEverythingFrequent()
 
-au BufNew,BufRead *.h,*.cpp call hide#SyntaxHighlight#EnableBufferSyntaxHighlighting()
+au BufNew,BufRead *.h,*.hpp,*.c,*.cpp call hide#SyntaxHighlight#EnableBufferSyntaxHighlighting()
