@@ -10,6 +10,7 @@ highlight link searching Include
 highlight link noSymbolsFound Include
 highlight link symbolName Type
 
-highlight focusedLine ctermbg=darkred guibg=darkred
+let bg_color = synIDattr(hlID('FoldColumn'), 'bg#')
+exec 'highlight focusedLine ctermbg='.bg_color.' guibg='.bg_color
 
 let b:current_syntax = "hide-index-query"
