@@ -2,7 +2,7 @@ from threading import RLock
 
 import hide
 
-from Utils import LocationAsVimDictionary
+from .Utils import LocationAsVimDictionary
 
 class BuildLogModelRow:
     def __init__(self, type, line):

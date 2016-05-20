@@ -1,6 +1,16 @@
+function hide#Utils#Python(code)
+	if has('python3')
+		execute 'python3 '.a:code
+	elseif has('python')
+		execute 'python '.a:code
+	else
+		throw "No python support!"
+	end
+endf
+
 function hide#Utils#Log(category, logLevel, text)
 	let log_message_text = (type(a:text) == type('') ? a:text : string(a:text))
-	execute 'python hidePlugin.logger.Log(hide.LogLevel.'.a:logLevel.', "'.log_message_text.'")'
+	call hide#Utils#Python('hidePlugin.logger.Log(hide.LogLevel.'.a:logLevel.', "'.log_message_text.'")')
 endf
 
 let g:hide#Utils#null = { '___null___': '' }

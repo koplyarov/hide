@@ -8,7 +8,7 @@ function s:LocalFunc(funcName)
 endf
 
 function s:GotoLocationAction(idx) dict
-	exec 'python vim.command("let l:location = " + hidePlugin.'.self.modelName.'.GetRow('.a:idx.').GetLocationAsVimDictionary())'
+	call hide#Utils#Python('vim.command("let l:location = " + hidePlugin.'.self.modelName.'.GetRow('.a:idx.').GetLocationAsVimDictionary())')
 	call hide#Utils#GotoLocation(location)
 	return !empty(location)
 endf
@@ -107,7 +107,7 @@ function s:IndexQueryException(msg)
 endf
 
 function s:DoBuild(methodCall)
-	exec 'python vim.command("let l:res = " + ("1" if hidePlugin.'.a:methodCall.' else "0"))'
+	call hide#Utils#Python('vim.command("let l:res = " + ("1" if hidePlugin.'.a:methodCall.' else "0"))')
 	if !res
 		throw s:BuildSystemException('Another build already in progress!')
 	end
@@ -116,27 +116,27 @@ function s:DoBuild(methodCall)
 endf
 
 function s:StopBuild()
-	python hidePlugin.InterruptBuild()
+	call hide#Utils#Python('hidePlugin.InterruptBuild()')
 endf
 
 function s:GetBuildTargets(A, L, P)
-	python vim.command('let l:res = join(' + str(list(hidePlugin.GetBuildTargets())) + ', "\n")')
+	call hide#Utils#Python("vim.command('let l:res = join(' + str(list(hidePlugin.GetBuildTargets())) + ', \"\n\")')")
 	call s:SyncEverything()
 	return res
 endf
 
 function s:BuildInProgress()
-	exec 'python vim.command("return " + ("1" if hidePlugin.BuildInProgress() else "0"))'
+	call hide#Utils#Python('vim.command("return " + ("1" if hidePlugin.BuildInProgress() else "0"))')
 endf
 
 function s:DoStartQueryIndex(methodCall)
-	exec 'python vim.command("let l:res = " + ("1" if hidePlugin.'.a:methodCall.' else "0"))'
+	call hide#Utils#Python('vim.command("let l:res = " + ("1" if hidePlugin.'.a:methodCall.' else "0"))')
 	if !res
 		throw s:IndexQueryException('Another index query already in progress!')
 	end
 	call s:SyncEverything()
-	exec 'python vim.command("let l:finished = " + ("0" if hidePlugin.IndexQueryInProgress() else "1"))'
-	exec 'python vim.command("let l:singleMatch = " + ("1" if hidePlugin.IndexQueryHasSingleMatch() else "0"))'
+	call hide#Utils#Python('vim.command("let l:finished = " + ("0" if hidePlugin.IndexQueryInProgress() else "1"))')
+	call hide#Utils#Python('vim.command("let l:singleMatch = " + ("1" if hidePlugin.IndexQueryHasSingleMatch() else "0"))')
 	if finished && singleMatch
 		call s:indexQueryBufInfo.Action(0)
 	else
@@ -145,29 +145,20 @@ function s:DoStartQueryIndex(methodCall)
 endf
 
 function s:SetLogLevel(logLevel)
-	execute 'python hide.Logger.SetLogLevel(hide.LogLevel.'.a:logLevel.')'
+	call hide#Utils#Python('hide.Logger.SetLogLevel(hide.LogLevel.'.a:logLevel.')')
 endf
 
 function s:GetLogLevels(A, L, P)
 	return join([ 'Debug', 'Info', 'Warning', 'Error' ], "\n")
 endf
 
-python import sys
-exe 'python sys.path.insert(0, "'.fnameescape(s:plugin_path).'")'
+call hide#Utils#Python('import sys')
+call hide#Utils#Python('sys.path.insert(0, "'.fnameescape(s:plugin_path).'")')
 
-python << endpython
+call hide#Utils#Python('import vim, string, hide_vim, hide')
+call hide#Utils#Python('hidePlugin = hide_vim.HidePlugin()')
 
-import vim
-import string
-
-import hide_vim
-import hide
-
-hidePlugin = hide_vim.HidePlugin()
-
-endpython
-
-au VimLeavePre * python del hidePlugin
+au VimLeavePre * call hide#Utils#Python('del hidePlugin')
 au BufWritePre * if <SID>BuildInProgress() | throw s:BuildSystemException('Save prevented due to build in progress!') | end
 
 call s:SyncEverything()

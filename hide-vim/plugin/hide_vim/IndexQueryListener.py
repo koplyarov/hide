@@ -2,7 +2,7 @@ from threading import Condition
 
 import hide
 
-from Utils import LocationAsVimDictionary
+from .Utils import LocationAsVimDictionary
 
 class IndexQueryModelRow:
     def __init__(self, type, entry):

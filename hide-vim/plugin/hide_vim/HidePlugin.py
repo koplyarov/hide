@@ -2,11 +2,11 @@ from threading import RLock
 
 import hide
 
-from BuildProcessListener import *
-from IndexQueryListener import *
-from LoggerSink import *
-from Model import *
-from SyntaxHighlighter import *
+from .BuildProcessListener import *
+from .IndexQueryListener import *
+from .LoggerSink import *
+from .Model import *
+from .SyntaxHighlighter import *
 
 
 class HidePlugin:

@@ -11,7 +11,7 @@ class LoggerSink(hide.ILoggerSink):
     def __init__(self):
         super(LoggerSink, self).__init__()
     def PrintMessage(self, msg):
-        print msg.ToString()
+        print(msg.ToString())
 
 hide.SetCurrentThreadName('main')
 
