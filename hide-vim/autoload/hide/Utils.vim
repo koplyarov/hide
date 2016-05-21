@@ -87,16 +87,23 @@ function hide#Utils#ForEachWindow(func, args, ...)
 			exec 'tabnext '.i
 			let tabWin = winnr()
 			try
-				for j in range(1, winnr('$'))
-					exec j.'wincmd w'
-					if a:0 == 1
-						call call(a:func, a:args, a:1)
-					else
-						call call(a:func, a:args)
-					end
-				endfor
+				exec 'wincmd p'
+				let tabWinPrev = winnr()
+				try
+					let windows = range(1, winnr('$'))
+					for j in windows
+						exec j.'wincmd w'
+						if a:0 == 1
+							call call(a:func, a:args, a:1)
+						else
+							call call(a:func, a:args)
+						end
+					endfor
+				finally
+					exec ''.tabWinPrev.'wincmd w'
+				endtry
 			finally
-				exec tabWin.'wincmd w'
+				exec ''.tabWin.'wincmd w'
 			endtry
 		endfor
 	finally
