@@ -8,7 +8,7 @@ function s:LocalFunc(funcName)
 endf
 
 function s:GotoLocationAction(idx) dict
-	call hide#Utils#Python('vim.command("let l:location = " + hidePlugin.'.self.modelName.'.GetRow('.a:idx.').GetLocationAsVimDictionary())')
+	let location = hide#Utils#Python('vim.command("return " + hidePlugin.'.self.modelName.'.GetRow('.a:idx.').GetLocationAsVimDictionary())')
 	call hide#Utils#GotoLocation(location)
 	return !empty(location)
 endf
@@ -107,7 +107,7 @@ function s:IndexQueryException(msg)
 endf
 
 function s:DoBuild(methodCall)
-	call hide#Utils#Python('vim.command("let l:res = " + ("1" if hidePlugin.'.a:methodCall.' else "0"))')
+	let res = hide#Utils#Python('vim.command("return " + ("1" if hidePlugin.'.a:methodCall.' else "0"))')
 	if !res
 		throw s:BuildSystemException('Another build already in progress!')
 	end
@@ -120,23 +120,23 @@ function s:StopBuild()
 endf
 
 function s:GetBuildTargets(A, L, P)
-	call hide#Utils#Python("vim.command('let l:res = join(' + str(list(hidePlugin.GetBuildTargets())) + ', \"\n\")')")
+	let res = hide#Utils#Python("vim.command('return join(' + str(list(hidePlugin.GetBuildTargets())) + ', \"\n\")')")
 	call s:SyncEverything()
 	return res
 endf
 
 function s:BuildInProgress()
-	call hide#Utils#Python('vim.command("return " + ("1" if hidePlugin.BuildInProgress() else "0"))')
+	return hide#Utils#Python('vim.command("return " + ("1" if hidePlugin.BuildInProgress() else "0"))')
 endf
 
 function s:DoStartQueryIndex(methodCall)
-	call hide#Utils#Python('vim.command("let l:res = " + ("1" if hidePlugin.'.a:methodCall.' else "0"))')
+	let res = hide#Utils#Python('vim.command("return " + ("1" if hidePlugin.'.a:methodCall.' else "0"))')
 	if !res
 		throw s:IndexQueryException('Another index query already in progress!')
 	end
 	call s:SyncEverything()
-	call hide#Utils#Python('vim.command("let l:finished = " + ("0" if hidePlugin.IndexQueryInProgress() else "1"))')
-	call hide#Utils#Python('vim.command("let l:singleMatch = " + ("1" if hidePlugin.IndexQueryHasSingleMatch() else "0"))')
+	let finished = hide#Utils#Python('vim.command("return " + ("0" if hidePlugin.IndexQueryInProgress() else "1"))')
+	let singleMatch = hide#Utils#Python('vim.command("return " + ("1" if hidePlugin.IndexQueryHasSingleMatch() else "0"))')
 	if finished && singleMatch
 		call s:indexQueryBufInfo.Action(0)
 	else

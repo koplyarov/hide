@@ -59,7 +59,7 @@ function hide#Buffer#Buffer(bufInfo)
 		function s:BufferPrototype.Sync()
 			let prevLinesCount = len(self._lines)
 
-			call hide#Utils#Python('vim.command("let l:events = [" + str.join(",", map(lambda e: e.ToVimDictionary(), hidePlugin.'.self.modelName.'.GetEvents())) + "]")')
+			let events = hide#Utils#Python('vim.command("return [" + str.join(",", map(lambda e: e.ToVimDictionary(), hidePlugin.'.self.modelName.'.GetEvents())) + "]")')
 
 			if !empty(events)
 				try
