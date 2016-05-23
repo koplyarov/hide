@@ -1,4 +1,5 @@
 from collections import defaultdict
+from six import iteritems
 from threading import Lock
 
 import hide
@@ -42,8 +43,8 @@ class SyntaxHighlighter:
         if not words and not forceFullUpdate:
             return
 
-        added_words = { word: category for (word, category) in words.iteritems() if not category is None }
-        removed_words = [ (word, category) for (word, category) in words.iteritems() if category is None ]
+        added_words = { word: category for (word, category) in iteritems(words) if not category is None }
+        removed_words = [ (word, category) for (word, category) in iteritems(words) if category is None ]
 
         for w, c in removed_words:
             del self.__words[w]
@@ -61,10 +62,10 @@ class SyntaxHighlighter:
         log_level_error = hide.LogLevel(hide.LogLevel.Error)
 
         categories = defaultdict(list)
-        for w, c in self.__words.iteritems():
+        for w, c in iteritems(self.__words):
             categories[c].append(w)
 
-        for c, words in categories.iteritems():
+        for c, words in iteritems(categories):
             syntax_cmd_init = 'syn keyword HideHighlight%s' % c
             syntax_cmd = syntax_cmd_init
             for w in words:
