@@ -1,8 +1,10 @@
 #include <hide/utils/Executable.h>
 
-#include <fcntl.h>
-#include <sys/wait.h>
-#include <unistd.h>
+#if HIDE_PLATFORM_POSIX
+#	include <fcntl.h>
+#	include <sys/wait.h>
+#	include <unistd.h>
+#endif
 
 #include <sstream>
 #include <system_error>
@@ -116,6 +118,9 @@ namespace hide
 		}
 	};
 	HIDE_NAMED_LOGGER(Executable::PipeReadEnd);
+
+#elif HIDE_PLATFORM_WINDOWS
+
 #endif
 
 
@@ -199,6 +204,8 @@ namespace hide
 			execvp(executable.c_str(), args.data());
 			exit(-1); // TODO: ???
 		}
+#elif HIDE_PLATFORM_WINDOWS
+		HIDE_THROW(std::runtime_error("Not implemented!"));
 #else
 #	error Executable::Executable is not implemented
 #endif
@@ -226,6 +233,8 @@ namespace hide
 				return;
 			BOOST_THROW_EXCEPTION(std::system_error(errno, std::system_category(), "Could not kill " + std::to_string(_pid) + " child process!"));
 		}
+#elif HIDE_PLATFORM_WINDOWS
+		HIDE_THROW(std::runtime_error("Not implemented!"));
 #else
 #	error Executable::Interrupt is not implemented
 #endif
@@ -264,6 +273,8 @@ namespace hide
 		}
 
 		InvokeListeners(std::bind(&IExecutableListener::OnFinished, std::placeholders::_1, *_retCode));
+#elif HIDE_PLATFORM_WINDOWS
+		HIDE_THROW(std::runtime_error("Not implemented!"));
 #else
 #	error Executable::ThreadFunc is not implemented
 #endif

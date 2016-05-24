@@ -5,6 +5,9 @@ nmap <F1> yyjp>>^dWis_logger.Info() << "<ESC>A";<ESC>:s/\((\<Bar>, \)\([A-Za-z0-
 au BufNew *.h,*.hpp,*.c,*.cpp set complete-=i
 
 if exists('g:load_hide_plugin') && g:load_hide_plugin == 1
+	python import sys
+	python sys.path.insert(0, 'build\\bin')
+	python sys.path.insert(0, 'build\\bin\\Debug')
 	let g:timer._handlers = {}
 	set updatetime=1000
 	set runtimepath+=./hide-vim

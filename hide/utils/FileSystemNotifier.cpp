@@ -148,6 +148,42 @@ namespace hide
 		void PopulateState(const IFileSysterNotifierListenerPtr& listener) const
 		{ }
 	};
+#elif HIDE_PLATFORM_WINDOWS
+	class FileSystemNotifier::Impl : public ListenersHolder<IFileSysterNotifierListener>
+	{
+		HIDE_NONCOPYABLE(Impl);
+
+	public:
+		Impl()
+		{
+			HIDE_THROW(std::runtime_error("Not implemented!"));
+		}
+
+		~Impl()
+		{
+		}
+
+		void Interrupt()
+		{
+		}
+
+		void AddPath(const std::string& p)
+		{
+		}
+
+		void RemovePath(const std::string& p)
+		{
+		}
+
+		bool ProcessEvents()
+		{
+			return false;
+		}
+
+	protected:
+		void PopulateState(const IFileSysterNotifierListenerPtr& listener) const
+		{ }
+	};
 #else
 #	error No FileSystemNotifier::Impl class!
 #endif

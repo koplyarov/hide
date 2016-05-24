@@ -8,7 +8,8 @@ include(${SWIG_USE_FILE})
 
 find_package(Threads)
 
-find_package(PythonLibs REQUIRED)
+find_package(PythonLibs 2.7 REQUIRED)
+message(STATUS "PythonLibs: ${PYTHON_LIBRARIES}")
 
 find_package(Boost REQUIRED COMPONENTS
 	program_options
@@ -18,18 +19,25 @@ find_package(Boost REQUIRED COMPONENTS
 	exception
 )
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 
 include_directories(${PYTHON_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${LibClang_INCLUDE_DIRS})
-include_directories(${CMAKE_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-add_definitions(-std=c++11)
-add_definitions(-Wall)
-
-add_definitions(-DHIDE_PLATFORM_POSIX=1) # TODO: implement platform detection
+if (MSVC)
+	add_definitions(-DBOOST_ALL_NO_LIB)
+	add_definitions(-DMS_NO_COREDLL)
+	add_definitions(-DPy_ENABLE_SHARED)
+	add_definitions(-DSWIG_PYTHON_INTERPRETER_NO_DEBUG)
+	add_definitions(-DHIDE_PLATFORM_WINDOWS=1)
+else()
+	add_definitions(-std=c++11)
+	add_definitions(-Wall)
+	add_definitions(-DHIDE_PLATFORM_POSIX=1)
+endif()
 
 ######################################################################
 
@@ -58,7 +66,7 @@ set(hide_SRCS
 	hide/utils/Thread.cpp
 )
 
-add_library(hide SHARED ${hide_SRCS})
+add_library(hide STATIC ${hide_SRCS})
 
 target_link_libraries(hide
 	${Boost_PROGRAM_OPTIONS_LIBRARY}
@@ -97,7 +105,9 @@ set(CMAKE_SWIG_FLAGS "-threads")
 set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
 set_source_files_properties(${swig_SRCS} PROPERTIES CPLUSPLUS ON)
-set_source_files_properties("bin/hidePYTHON_wrap.cxx" PROPERTIES COMPILE_FLAGS "-Wno-maybe-uninitialized")
+if (NOT MSVC)
+	set_source_files_properties("bin/hidePYTHON_wrap.cxx" PROPERTIES COMPILE_FLAGS "-Wno-maybe-uninitialized")
+endif()
 
 swig_add_module(hide python ${swig_SRCS})
 swig_link_libraries(hide hide ${PYTHON_LIBRARIES})

@@ -20,7 +20,8 @@ namespace hide
 #define HIDE_DECLARE_PTR(T_) typedef std::shared_ptr<T_>	T_##Ptr
 #define HIDE_DECLARE_ARRAY(T_) typedef std::vector<T_>	T_##Array
 #define HIDE_DECLARE_MAP(K_, V_) typedef std::map<K_, V_>	K_##To##V_##Map
-#define HIDE_CHECK(Expr_, Exception_) do { if (!(Expr_)) BOOST_THROW_EXCEPTION(Exception_); } while (false)
+#define HIDE_THROW(...) BOOST_THROW_EXCEPTION(__VA_ARGS__)
+#define HIDE_CHECK(Expr_, Exception_) do { if (!(Expr_)) HIDE_THROW(Exception_); } while (false)
 #define HIDE_LOCK(Mutex_)	std::lock_guard<decltype(Mutex_)> BOOST_PP_CAT(lock, __LINE__)(Mutex_);
 
 #define HIDE_SELF_TYPE std::remove_cv<std::remove_reference<decltype(*this)>::type>::type
@@ -76,7 +77,7 @@ namespace hide
 		static Enum FromString(const std::string& str) \
 		{ \
 			BOOST_PP_SEQ_FOR_EACH(DETAIL_HIDE_ENUM_FROM_STRING_IF, ~, BOOST_PP_TUPLE_TO_SEQ((__VA_ARGS__))) \
-			BOOST_THROW_EXCEPTION(std::runtime_error("Could not parse " + GetClassName() + " value: " + str)); \
+			HIDE_THROW(std::runtime_error("Could not parse " + GetClassName() + " value: " + str)); \
 		}
 
 #define HIDE_ENUM_CLASS(Class_) \
@@ -111,7 +112,7 @@ namespace hide
 		{ }
 	};
 
-#define HIDE_PURE_VIRTUAL_CALL() BOOST_THROW_EXCEPTION(PureVirtualCallException(__func__));
+#define HIDE_PURE_VIRTUAL_CALL() HIDE_THROW(PureVirtualCallException(__func__));
 
 }
 
