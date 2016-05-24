@@ -8,7 +8,7 @@ include(${SWIG_USE_FILE})
 
 find_package(Threads)
 
-find_package(PythonLibs 2.7 REQUIRED)
+find_package(PythonLibs REQUIRED)
 message(STATUS "PythonLibs: ${PYTHON_LIBRARIES}")
 
 find_package(Boost REQUIRED COMPONENTS
