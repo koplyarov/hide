@@ -4,7 +4,7 @@ import sys
 import time
 import threading
 
-sys.path.insert(0, './bin')
+sys.path.insert(0, './build/bin')
 import hide
 
 class LoggerSink(hide.ILoggerSink):
