@@ -61,34 +61,43 @@ class SyntaxHighlighter:
         logger = self.__logger
         log_level_error = hide.LogLevel(hide.LogLevel.Error)
 
+        # This should not be done each time!
         categories = defaultdict(list)
         for w, c in iteritems(self.__words):
             categories[c].append(w)
 
         for c, words in iteritems(categories):
             syntax_cmd_init = 'syn keyword HideHighlight%s' % c
-            syntax_cmd = syntax_cmd_init
+            syntax_cmd_len = len(syntax_cmd_init) + 1
+            one_command_words = [ syntax_cmd_init ]
             for w in words:
+                # Should not calculate the banned words substitutions and the escaping each time
                 if w.lower() in banned_words:
                     if w.lower() != 'concealends':
                         vim.command(r'syn match %s /\<%s\>/' % (c, w))
+                        pass
                     continue
 
                 escaped_w = w.replace(r'|', r'\|')
 
-                if len(syntax_cmd) + 1 + len(escaped_w) >= 512:
+                if syntax_cmd_len + 1 + len(escaped_w) >= 512:
+                    syntax_cmd = ' '.join(one_command_words)
                     try:
                         vim.command(syntax_cmd)
                     except vim.error as e:
-                        logger.Log(log_level_error, 'exec failed (%s): %s' % (e.message, syntax_cmd))
-                    syntax_cmd = syntax_cmd_init
+                        logger.Log(log_level_error, 'exec failed (%s): %s' % (e, syntax_cmd))
+                    syntax_cmd_len = len(syntax_cmd_init) + 1
+                    one_command_words = [ syntax_cmd_init ]
 
-                syntax_cmd = '%s %s' % (syntax_cmd, escaped_w)
+                one_command_words.append(escaped_w)
+                syntax_cmd_len += len(escaped_w) + 1
 
-            try:
-                vim.command(syntax_cmd)
-            except vim.error as e:
-                logger.Log(log_level_error, 'exec failed (%s): %s' % (e.message, syntax_cmd))
+            if len(one_command_words) > 1:
+                syntax_cmd = ' '.join(one_command_words)
+                try:
+                    vim.command(syntax_cmd)
+                except vim.error as e:
+                    logger.Log(log_level_error, 'exec failed (%s): %s' % (e, syntax_cmd))
 
     def __SetHighlights(self):
         self.__ResetHighlights()
