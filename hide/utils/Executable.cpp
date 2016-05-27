@@ -57,7 +57,10 @@ namespace hide
 		virtual void Close()
 		{
 			if (_fd != -1)
+			{
 				::close(_fd);
+				_fd = -1;
+			}
 		}
 	};
 	HIDE_NAMED_LOGGER(Executable::PipeWriteEnd);
