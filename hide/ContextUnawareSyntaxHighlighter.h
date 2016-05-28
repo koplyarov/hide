@@ -65,7 +65,8 @@ namespace hide
 	{
 		virtual ~IContextUnawareSyntaxHighlighterListener() { }
 
-		virtual void OnWordsChanged(const Diff<SyntaxWordInfo>& diff) { HIDE_PURE_VIRTUAL_CALL(); }
+		virtual void OnVisibleFilesChanged(const Diff<std::string>& diff) { HIDE_PURE_VIRTUAL_CALL(); }
+		virtual void OnWordsChanged(const std::string& filename, const Diff<SyntaxWordInfo>& diff) { HIDE_PURE_VIRTUAL_CALL(); }
 	};
 	HIDE_DECLARE_PTR(IContextUnawareSyntaxHighlighterListener);
 
@@ -81,9 +82,25 @@ namespace hide
 		class IndexerListener;
 		HIDE_DECLARE_PTR(IndexerListener);
 
+        class FileData
+        {
+        private:
+            WordsInfoMap					_wordsInfo;
+
+        public:
+			const WordsInfoMap& GetWordsInfo() const { return _wordsInfo; }
+
+			void AddWord(Diff<SyntaxWordInfo>& diff, const std::string& word, SyntaxWordCategory category);
+			void RemoveWord(Diff<SyntaxWordInfo>& diff, const std::string& word, SyntaxWordCategory category);
+        };
+        HIDE_DECLARE_PTR(FileData);
+
+		typedef std::map<std::string, FileDataPtr>	FileDataMap;
+
 	private:
 		static NamedLogger				s_logger;
 		boost::regex					_whitespaceRegex;
+        FileDataMap						_fileData;
 		WordsInfoMap					_wordsInfo;
 		IndexerPtr						_indexer;
 		IIndexerListenerPtr				_indexerListener;
@@ -98,13 +115,13 @@ namespace hide
 	protected:
 		virtual void PopulateState(const IContextUnawareSyntaxHighlighterListenerPtr& listener) const;
 
-		void AddWord(Diff<SyntaxWordInfo>& diff, const std::string& word, SyntaxWordCategory category);
-		void RemoveWord(Diff<SyntaxWordInfo>& diff, const std::string& word, SyntaxWordCategory category);
-
 		void OnIndexChanged(const Diff<IIndexEntryPtr>& diff);
 
 		bool EntryIsAWord(const IIndexEntryPtr& entry);
 		static SyntaxWordCategory GetCategory(const IIndexEntryPtr& entry);
+
+    private:
+		FileDataPtr GetFileData(const std::string& filename);
 	};
 	HIDE_DECLARE_PTR(ContextUnawareSyntaxHighlighter);
 

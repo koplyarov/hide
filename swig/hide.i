@@ -85,6 +85,7 @@
 %shared_ptr(hide::IIndexEntry)
 %template(IIndexEntryVector) std::vector<std::shared_ptr<hide::IIndexEntry> >;
 %template(IIndexEntryDiff) hide::Diff<std::shared_ptr<hide::IIndexEntry> >;
+%template(StringDiff) hide::Diff<std::string>;
 %shared_ptr(hide::IPartialIndex)
 %include <hide/IPartialIndex.h>
 

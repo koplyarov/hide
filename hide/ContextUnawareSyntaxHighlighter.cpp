@@ -28,6 +28,7 @@ namespace hide
 	{
 		_indexer->AddListener(_indexerListener);
 
+#if 0
 		Diff<SyntaxWordInfo> diff;
 
 		StringArray builtin_consts = { "nullptr", "NULL" };
@@ -77,6 +78,7 @@ namespace hide
 		StringArray keywords = { "asm", "class", "const", "constexpr", "enum", "explicit", "export", "extern", "friend", "inline", "mutable", "namespace", "noexcept", "operator", "private", "protected", "public", "register", "static", "struct", "template", "this", "thread_local", "typedef", "typename", "union", "using", "virtual", "void", "volatile" };
 		for (const auto& w : keywords)
 			AddWord(diff, w, SyntaxWordCategory::Keyword);
+#endif
 
 		s_logger.Info() << "Created";
 	}
@@ -92,20 +94,90 @@ namespace hide
 	void ContextUnawareSyntaxHighlighter::PopulateState(const IContextUnawareSyntaxHighlighterListenerPtr& listener) const
 	{
 		Profiler<> profiler;
-		Diff<SyntaxWordInfo> diff;
-		for (const auto& wi : _wordsInfo)
-		{
-			if (wi.second.empty() || wi.second.rbegin()->second <= 0)
-				continue;
 
-			diff.GetAdded().push_back(SyntaxWordInfo(wi.first, wi.second.rbegin()->first.ToString()));
+		for (const auto& fd : _fileData)
+		{
+			Diff<SyntaxWordInfo> diff;
+			for (const auto& wi : fd.second->GetWordsInfo())
+			{
+				if (wi.second.empty() || wi.second.rbegin()->second <= 0)
+					continue;
+
+				diff.GetAdded().push_back(SyntaxWordInfo(wi.first, wi.second.rbegin()->first.ToString()));
+			}
+
+			listener->OnWordsChanged(fd.first, diff);
 		}
-		listener->OnWordsChanged(diff);
+
 		s_logger.Info() << "PopulateState: " << profiler.Reset();
 	}
 
 
-	void ContextUnawareSyntaxHighlighter::AddWord(Diff<SyntaxWordInfo>& diff, const std::string& word, SyntaxWordCategory category)
+	void ContextUnawareSyntaxHighlighter::OnIndexChanged(const Diff<IIndexEntryPtr>& diff)
+	{
+		HIDE_LOCK(GetMutex());
+
+		std::map<std::string, Diff<SyntaxWordInfo>> words_diff;
+
+		for (auto&& entry : diff.GetRemoved())
+			if (EntryIsAWord(entry))
+			{
+				auto filename = entry->GetLocation().GetFilename();
+				GetFileData(filename)->RemoveWord(words_diff[filename], entry->GetName(), GetCategory(entry));
+			}
+
+		for (auto&& entry : diff.GetAdded())
+			if (EntryIsAWord(entry))
+			{
+				auto filename = entry->GetLocation().GetFilename();
+				GetFileData(filename)->AddWord(words_diff[filename], entry->GetName(), GetCategory(entry));
+			}
+
+		for (auto&& wd : words_diff)
+			InvokeListeners(std::bind(&IContextUnawareSyntaxHighlighterListener::OnWordsChanged, std::placeholders::_1, wd.first, wd.second));
+	}
+
+
+	bool ContextUnawareSyntaxHighlighter::EntryIsAWord(const IIndexEntryPtr& entry)
+	{
+		boost::smatch m;
+		return !boost::regex_search(entry->GetName(), m, _whitespaceRegex, boost::match_partial);
+	}
+
+
+	SyntaxWordCategory ContextUnawareSyntaxHighlighter::GetCategory(const IIndexEntryPtr& entry)
+	{
+		switch (entry->GetKind().GetRaw())
+		{
+		case IndexEntryKind::Unknown:			return SyntaxWordCategory::Unknown;
+		case IndexEntryKind::NamedConstant:		return SyntaxWordCategory::NamedConstant;
+		case IndexEntryKind::Variable:			return SyntaxWordCategory::Variable;
+		case IndexEntryKind::Function:			return SyntaxWordCategory::Function;
+		case IndexEntryKind::Type:				return SyntaxWordCategory::Type;
+		case IndexEntryKind::Namespace:			return SyntaxWordCategory::Namespace;
+		case IndexEntryKind::Macro:				return SyntaxWordCategory::Macro;
+		default:								return SyntaxWordCategory::Unknown;
+		}
+	}
+
+
+	ContextUnawareSyntaxHighlighter::FileDataPtr ContextUnawareSyntaxHighlighter::GetFileData(const std::string& filename)
+	{
+		auto& fd = _fileData[filename];
+		if (!fd)
+		{
+			fd = std::make_shared<FileData>();
+			Diff<std::string> diff({filename}, {});
+			InvokeListeners(std::bind(&IContextUnawareSyntaxHighlighterListener::OnVisibleFilesChanged, std::placeholders::_1, diff));
+		}
+		return fd;
+	}
+
+
+	////////////////////////////////////////////////////////////////////////////////
+
+
+	void ContextUnawareSyntaxHighlighter::FileData::AddWord(Diff<SyntaxWordInfo>& diff, const std::string& word, SyntaxWordCategory category)
 	{
 		auto wi_it = _wordsInfo.find(word);
 		if (wi_it == _wordsInfo.end())
@@ -123,7 +195,7 @@ namespace hide
 	}
 
 
-	void ContextUnawareSyntaxHighlighter::RemoveWord(Diff<SyntaxWordInfo>& diff, const std::string& word, SyntaxWordCategory category)
+	void ContextUnawareSyntaxHighlighter::FileData::RemoveWord(Diff<SyntaxWordInfo>& diff, const std::string& word, SyntaxWordCategory category)
 	{
 		auto wi_it = _wordsInfo.find(word);
 		if (wi_it == _wordsInfo.end())
@@ -152,47 +224,6 @@ namespace hide
 
 		if (wi_it->second.empty())
 			_wordsInfo.erase(wi_it);
-	}
-
-
-	void ContextUnawareSyntaxHighlighter::OnIndexChanged(const Diff<IIndexEntryPtr>& diff)
-	{
-		HIDE_LOCK(GetMutex());
-
-		Diff<SyntaxWordInfo> words_diff;
-
-		for (auto&& entry : diff.GetRemoved())
-			if (EntryIsAWord(entry))
-				RemoveWord(words_diff, entry->GetName(), GetCategory(entry));
-
-		for (auto&& entry : diff.GetAdded())
-			if (EntryIsAWord(entry))
-				AddWord(words_diff, entry->GetName(), GetCategory(entry));
-
-		InvokeListeners(std::bind(&IContextUnawareSyntaxHighlighterListener::OnWordsChanged, std::placeholders::_1, words_diff));
-	}
-
-
-	bool ContextUnawareSyntaxHighlighter::EntryIsAWord(const IIndexEntryPtr& entry)
-	{
-		boost::smatch m;
-		return !boost::regex_search(entry->GetName(), m, _whitespaceRegex, boost::match_partial);
-	}
-
-
-	SyntaxWordCategory ContextUnawareSyntaxHighlighter::GetCategory(const IIndexEntryPtr& entry)
-	{
-		switch (entry->GetKind().GetRaw())
-		{
-		case IndexEntryKind::Unknown:			return SyntaxWordCategory::Unknown;
-		case IndexEntryKind::NamedConstant:		return SyntaxWordCategory::NamedConstant;
-		case IndexEntryKind::Variable:			return SyntaxWordCategory::Variable;
-		case IndexEntryKind::Function:			return SyntaxWordCategory::Function;
-		case IndexEntryKind::Type:				return SyntaxWordCategory::Type;
-		case IndexEntryKind::Namespace:			return SyntaxWordCategory::Namespace;
-		case IndexEntryKind::Macro:				return SyntaxWordCategory::Macro;
-		default:								return SyntaxWordCategory::Unknown;
-		}
 	}
 
 }
