@@ -18,8 +18,6 @@ class SyntaxHighlighterListener(hide.IContextUnawareSyntaxHighlighterListener):
         pass
 
     def OnWordsChanged(self, filename, diff):
-        if filename.endswith(".cpp"):
-            pass
         with self.__mutex:
             try:
                 file_entry = self.__files[filename]
