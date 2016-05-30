@@ -1,8 +1,8 @@
 from collections import defaultdict
-from six import iteritems
 from threading import Lock
 
 from .Profiler import *
+from .Adapters import iteritems
 
 import hide
 import vim
