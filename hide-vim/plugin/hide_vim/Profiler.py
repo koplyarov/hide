@@ -8,9 +8,9 @@ class ProfilerResult:
         self.clockTime = clockTime
 
     def __str__(self):
-        return "{{ wall: {}, clock: {} }}".format(ProfilerResult.__FormatTimeDuration(self.wallTime), ProfilerResult.__FormatTimeDuration(self.clockTime))
+        return "{{ wall: {}, clock: {} }}".format(self.__FormatTimeDuration(self.wallTime), self.__FormatTimeDuration(self.clockTime))
 
-    def __FormatTimeDuration(d):
+    def __FormatTimeDuration(self, d):
         h = int(d / 3600)
         m = int(d / 60) % 60
         s = int(d) % 60
