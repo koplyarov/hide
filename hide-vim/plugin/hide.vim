@@ -158,7 +158,7 @@ call hide#Utils#Python('sys.path.insert(0, "'.fnameescape(s:plugin_path).'")')
 call hide#Utils#Python('import vim, string, hide_vim, hide')
 call hide#Utils#Python('hidePlugin = hide_vim.HidePlugin()')
 
-au VimLeavePre * call hide#Utils#Python('del hidePlugin')
+au VimLeavePre * call hide#Utils#Python('hidePlugin.close()')
 au BufWritePre * if <SID>BuildInProgress() | throw s:BuildSystemException('Save prevented due to build in progress!') | end
 
 call s:SyncEverything()

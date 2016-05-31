@@ -7,6 +7,7 @@
 #include <boost/regex.hpp>
 
 #include <hide/Indexer.h>
+#include <hide/ProjectFiles.h>
 #include <hide/utils/ListenersHolder.h>
 #include <hide/utils/Utils.h>
 
@@ -65,10 +66,53 @@ namespace hide
 	{
 		virtual ~IContextUnawareSyntaxHighlighterListener() { }
 
-		virtual void OnVisibleFilesChanged(const Diff<std::string>& diff) { HIDE_PURE_VIRTUAL_CALL(); }
 		virtual void OnWordsChanged(const std::string& filename, const Diff<SyntaxWordInfo>& diff) { HIDE_PURE_VIRTUAL_CALL(); }
 	};
 	HIDE_DECLARE_PTR(IContextUnawareSyntaxHighlighterListener);
+
+
+	struct IContextUnawareSyntaxHighlighterFileListener
+	{
+		virtual ~IContextUnawareSyntaxHighlighterFileListener() { }
+
+		virtual void OnVisibleFilesChanged(const Diff<std::string>& diff) { HIDE_PURE_VIRTUAL_CALL(); }
+	};
+	HIDE_DECLARE_PTR(IContextUnawareSyntaxHighlighterFileListener);
+
+
+	class ContextUnawareSyntaxHighlighterFile : private ListenersHolder<IContextUnawareSyntaxHighlighterFileListener>
+	{
+		typedef ListenersHolder<IContextUnawareSyntaxHighlighterFileListener> ListenersHolderBase;
+
+		class ProjectFilesListener : public IProjectFilesListener
+		{
+		private:
+			ContextUnawareSyntaxHighlighterFile*	_inst;
+
+		public:
+			ProjectFilesListener(ContextUnawareSyntaxHighlighterFile* inst);
+
+			virtual void OnFileAdded(const IFilePtr& file);
+			virtual void OnFileRemoved(const IFilePtr& file);
+			virtual void OnFileModified(const IFilePtr& file);
+		};
+
+	private:
+		ProjectFilesPtr				_files;
+		std::set<std::string>		_filenames;
+		IProjectFilesListenerPtr	_listener;
+
+	public:
+		ContextUnawareSyntaxHighlighterFile(const ProjectFilesPtr& files);
+		~ContextUnawareSyntaxHighlighterFile();
+
+		virtual void AddListener(const IContextUnawareSyntaxHighlighterFileListenerPtr& listener)		{ ListenersHolderBase::AddListener(listener); }
+		virtual void RemoveListener(const IContextUnawareSyntaxHighlighterFileListenerPtr& listener)	{ ListenersHolderBase::RemoveListener(listener); }
+
+	protected:
+		virtual void PopulateState(const IContextUnawareSyntaxHighlighterFileListenerPtr& listener) const;
+	};
+	HIDE_DECLARE_PTR(ContextUnawareSyntaxHighlighterFile);
 
 
 	class ContextUnawareSyntaxHighlighter : private ListenersHolder<IContextUnawareSyntaxHighlighterListener>
@@ -82,32 +126,35 @@ namespace hide
 		class IndexerListener;
 		HIDE_DECLARE_PTR(IndexerListener);
 
-        class FileData
-        {
-        private:
-            WordsInfoMap					_wordsInfo;
+		class FileData
+		{
+		private:
+			WordsInfoMap					_wordsInfo;
 
-        public:
+		public:
 			const WordsInfoMap& GetWordsInfo() const { return _wordsInfo; }
 
 			void AddWord(Diff<SyntaxWordInfo>& diff, const std::string& word, SyntaxWordCategory category);
 			void RemoveWord(Diff<SyntaxWordInfo>& diff, const std::string& word, SyntaxWordCategory category);
-        };
-        HIDE_DECLARE_PTR(FileData);
+		};
+		HIDE_DECLARE_PTR(FileData);
 
 		typedef std::map<std::string, FileDataPtr>	FileDataMap;
 
 	private:
 		static NamedLogger				s_logger;
 		boost::regex					_whitespaceRegex;
-        FileDataMap						_fileData;
+		FileDataMap						_fileData;
 		WordsInfoMap					_wordsInfo;
+		ProjectFilesPtr					_files;
 		IndexerPtr						_indexer;
 		IIndexerListenerPtr				_indexerListener;
 
 	public:
-		ContextUnawareSyntaxHighlighter(const IndexerPtr& indexer);
+		ContextUnawareSyntaxHighlighter(const ProjectFilesPtr& files, const IndexerPtr& indexer);
 		~ContextUnawareSyntaxHighlighter();
+
+		ContextUnawareSyntaxHighlighterFilePtr GetFileContext(const std::string& filename);
 
 		virtual void AddListener(const IContextUnawareSyntaxHighlighterListenerPtr& listener)		{ ListenersHolderBase::AddListener(listener); }
 		virtual void RemoveListener(const IContextUnawareSyntaxHighlighterListenerPtr& listener)	{ ListenersHolderBase::RemoveListener(listener); }
@@ -120,7 +167,7 @@ namespace hide
 		bool EntryIsAWord(const IIndexEntryPtr& entry);
 		static SyntaxWordCategory GetCategory(const IIndexEntryPtr& entry);
 
-    private:
+	private:
 		FileDataPtr GetFileData(const std::string& filename);
 	};
 	HIDE_DECLARE_PTR(ContextUnawareSyntaxHighlighter);

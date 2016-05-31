@@ -2,6 +2,7 @@ from threading import RLock
 
 import hide
 
+from .Adapters import *
 from .BuildProcessListener import *
 from .IndexQueryListener import *
 from .LoggerSink import *
@@ -32,19 +33,26 @@ class HidePlugin:
 
         self.project = hide.Project.CreateAuto(['^(.*/)?\\bCMakeFiles\\b(/.*)?$', '^(.*/)?\\.git\\b(/.*)?$'])
 
-    def __del__(self):
+    def close(self):
         self.InterruptBuild()
         hide.Logger.RemoveSink(self.loggerSink)
+        for sh in itervalues(self.__syntaxHighlighters):
+            sh.close()
+        self.__syntaxHighlighters.clear()
 
     def CreateSyntaxHighlighter(self, filename):
         self.logger.Log(hide.LogLevel.Debug, 'CreateSyntaxHighlighter(' + filename + ')')
-        self.__syntaxHighlighters[filename] = SyntaxHighlighter(self.project.GetContextUnawareSyntaxHighlighter())
+        self.__syntaxHighlighters[filename] = SyntaxHighlighter(self.project, filename)
 
     def GetSyntaxHighlighter(self, filename):
         return self.__syntaxHighlighters[filename]
 
     def DeleteSyntaxHighlighter(self, filename):
-        self.logger.Log(hide.LogLevel.Debug, 'DeleteSyntaxHighlighter(' + filename + ')')
+        self.logger.Log(hide.LogLevel.Debug, 'DeleteSyntaxHighlighter({})'.format(filename))
+        try:
+            self.__syntaxHighlighters[filename].close()
+        except Exception as e:
+            self.logger.Log(hide.LogLevel.Debug, 'DeleteSyntaxHighlighter({}) failed: {}'.format(filename, traceback.format_exc(e)))
         del self.__syntaxHighlighters[filename]
 
     def GetBuildTargets(self):

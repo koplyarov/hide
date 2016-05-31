@@ -78,7 +78,7 @@ namespace hide
 	ContextUnawareSyntaxHighlighterPtr Project::GetContextUnawareSyntaxHighlighter()
 	{
 		if (!_contextUnawareSyntaxHighlighter)
-			_contextUnawareSyntaxHighlighter.reset(new ContextUnawareSyntaxHighlighter(GetIndexer()));
+			_contextUnawareSyntaxHighlighter.reset(new ContextUnawareSyntaxHighlighter(_files, GetIndexer()));
 		return _contextUnawareSyntaxHighlighter;
 	}
 

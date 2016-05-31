@@ -129,8 +129,13 @@
 %ignore hide::Indexer::Indexer;
 %include <hide/Indexer.h>
 
+%ignore hide::ContextUnawareSyntaxHighlighterFile::ContextUnawareSyntaxHighlighterFile;
+%ignore hide::ContextUnawareSyntaxHighlighter::ContextUnawareSyntaxHighlighter;
+%feature("director") hide::IContextUnawareSyntaxHighlighterFileListener;
+%shared_ptr(hide::IContextUnawareSyntaxHighlighterFileListener)
 %feature("director") hide::IContextUnawareSyntaxHighlighterListener;
 %shared_ptr(hide::IContextUnawareSyntaxHighlighterListener)
+%shared_ptr(hide::ContextUnawareSyntaxHighlighterFile)
 %shared_ptr(hide::ContextUnawareSyntaxHighlighter)
 %copyctor hide::SyntaxWordCategory;
 %template(SyntaxWordInfoArray) std::vector<hide::SyntaxWordInfo>;

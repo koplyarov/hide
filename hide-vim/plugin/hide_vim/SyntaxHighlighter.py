@@ -5,155 +5,177 @@ from .Profiler import *
 from .Adapters import iteritems
 
 import hide
+import traceback
 import vim
 
 
-class SyntaxHighlighterListener(hide.IContextUnawareSyntaxHighlighterListener):
+class FileEntry:
     def __init__(self):
-        super(SyntaxHighlighterListener, self).__init__()
-        self.__mutex = Lock()
-        self.__files = dict()
+        self.words = dict()
+        self.categories = dict()
+        self.__commandsCache = []
 
-    def OnVisibleFilesChanged(self, diff):
-        pass
+    def GetCommands(self):
+        if not self.__commandsCache:
+            cmd_cache = []
+            for category, words in iteritems(self.categories):
+                syntax_cmd_init = 'syn keyword HideHighlight{} '.format(category)
+                syntax_cmd_len = len(syntax_cmd_init)
+                cmd_assembler = [ syntax_cmd_init ]
+                for word, (dummy, vim_name, use_match) in iteritems(words):
+                    if use_match:
+                        if vim_name:
+                            cmd_cache.append(vim_name)
+                        continue
+
+                    if syntax_cmd_len + 1 + len(vim_name) >= 512:
+                        cmd_cache.append(' '.join(cmd_assembler))
+                        syntax_cmd_len = len(syntax_cmd_init)
+                        cmd_assembler = [ syntax_cmd_init ]
+
+                    cmd_assembler.append(vim_name)
+                    syntax_cmd_len += len(vim_name) + 1
+
+                if len(cmd_assembler) > 1:
+                    cmd_cache.append(' '.join(cmd_assembler))
+
+            self.__commandsCache = cmd_cache
+        return self.__commandsCache
+
+    def InvalidateCommands(self):
+        self.__commandsCache = []
+
+
+class SyntaxHighlighterListener(hide.IContextUnawareSyntaxHighlighterListener):
+    __bannedWords = { 'contains', 'oneline', 'fold', 'display', 'extend', 'concealends' }
+
+    def __init__(self, mutex, files):
+        super(SyntaxHighlighterListener, self).__init__()
+        self.__mutex = mutex
+        self.__files = files
 
     def OnWordsChanged(self, filename, diff):
-        with self.__mutex:
+        with self.__mutex: # TODO: optimize mutex locks
             try:
                 file_entry = self.__files[filename]
             except KeyError:
-                file_entry = self.__files[filename] = dict()
+                file_entry = self.__files[filename] = FileEntry()
+
+            banned_words = SyntaxHighlighterListener.__bannedWords
+            words = file_entry.words
+            categories = file_entry.categories
 
             for w in diff.GetRemoved():
-                file_entry[w.GetWord()] = None
+                word = w.GetWord()
+                try:
+                    word_entry = words.pop(word)
+                    category = word_entry[1]
+                    category_entry = categories[category]
+                    del category_entry[word]
+                except KeyError:
+                    pass
+
             for w in diff.GetAdded():
-                file_entry[w.GetWord()] = w.GetCategory()
+                word = w.GetWord()
+                category = w.GetCategory()
+                try:
+                    word_entry = words[word]
+                except KeyError:
+                    word_lower = word.lower()
+                    if word_lower in banned_words:
+                        vim_name = r'syn match {} /\<{}\>/'.format(category, word) if word_lower != 'concealends' else ''
+                        use_match = True
+                    else:
+                        vim_name = word.replace(r'|', r'\|')
+                        use_match = False
+                    word_entry = words[word] = (category, vim_name, use_match)
 
-    def GetChangedFiles(self):
+                try:
+                    category_entry = categories[category]
+                    category_entry[word] = word_entry
+                except KeyError:
+                    categories[category] = { word: word_entry }
+
+            file_entry.InvalidateCommands()
+
+
+class SyntaxHighlighterFileListener(hide.IContextUnawareSyntaxHighlighterFileListener):
+    def __init__(self, mutex, visibleFiles):
+        super(SyntaxHighlighterFileListener, self).__init__()
+        self.__mutex = mutex
+        self.__visibleFiles = visibleFiles
+        self.__logger = hide.NamedLogger('SyntaxHighlighterFileListener')
+
+    def OnVisibleFilesChanged(self, diff):
         with self.__mutex:
-            files = self.__files
-            self.__files = dict()
-            return files
-
-
-class SyntaxHighlighterFileEntry:
-    def __init__(self, bannedWords):
-        self.__vimCommands = []
-        self.__words = dict()
-        self.__bannedWords = bannedWords
-
-    def ApplyDiff(self, words):
-        added_words = { word: category for (word, category) in iteritems(words) if not category is None }
-        removed_words = [ (word, category) for (word, category) in iteritems(words) if category is None ]
-
-        for w, c in removed_words:
-            del self.__words[w]
-
-        self.__words.update(added_words)
-
-        if not removed_words:
-            update_vim_commands = self.__AddHighlights(added_words)
-            self.__vimCommands += update_vim_commands
-            return update_vim_commands
-        else:
-            self.__vimCommands += self.__AddHighlights(self.__words) # TODO: Reimplement this in a more efficient way
-            return self.__vimCommands
-
-    def GetVimCommands(self):
-        return self.__vimCommands
-
-    def __AddHighlights(self, addedWords):
-        vim_commands = []
-        banned_words = self.__bannedWords
-
-        categories = defaultdict(list)
-        for w, c in iteritems(self.__words):
-            categories[c].append(w)
-
-        for c, words in iteritems(categories):
-            syntax_cmd_init = 'syn keyword HideHighlight{}'.format(c)
-            syntax_cmd_len = len(syntax_cmd_init) + 1
-            one_command_words = [ syntax_cmd_init ]
-            for w in words:
-                if w.lower() in banned_words:
-                    if w.lower() != 'concealends':
-                        vim_commands.append(r'syn match {} /\<{}\>/'.format(c, w))
-                        pass
-                    continue
-
-                escaped_w = w.replace(r'|', r'\|')
-
-                if syntax_cmd_len + 1 + len(escaped_w) >= 512:
-                    vim_commands.append(' '.join(one_command_words))
-                    syntax_cmd_len = len(syntax_cmd_init) + 1
-                    one_command_words = [ syntax_cmd_init ]
-
-                one_command_words.append(escaped_w)
-                syntax_cmd_len += len(escaped_w) + 1
-
-            if len(one_command_words) > 1:
-                vim_commands.append(' '.join(one_command_words))
-
-        return vim_commands
-
+            visible_files = self.__visibleFiles
+            for f in diff.GetRemoved():
+                visible_files.remove(f)
+            for f in diff.GetAdded():
+                visible_files.add(f)
 
 
 class SyntaxHighlighterShared:
     def __init__(self, highlighter):
         self.__logger = hide.NamedLogger('SyntaxHighlighter')
-        self.__listener = SyntaxHighlighterListener()
-        self.__highlighter = highlighter
-        self.__highlighter.AddListener(self.__listener)
-        self.__words = dict()
-        self.__files = dict()
-        self.__bannedWords = { 'contains', 'oneline', 'fold', 'display', 'extend', 'concealends' }
+        self.mutex = Lock()
+        self.files = dict()
+        self.__listener = SyntaxHighlighterListener(self.mutex, self.files)
+        self.highlighter = highlighter
+        self.highlighter.AddListener(self.__listener)
 
-    def __del__(self):
-        self.__highlighter.RemoveListener(self.__listener)
-
-    def UpdateHighlights(self, forceFullUpdate):
-        logger = self.__logger
-        log_level_error = hide.LogLevel(hide.LogLevel.Error)
-        files = self.__listener.GetChangedFiles()
-        if not files and not forceFullUpdate:
-            return
-
-        vim_commands = []
-        for f in iteritems(files):
-            filename = f[0]
-            diff = f[1]
-            try:
-                file_entry = self.__files[filename]
-            except KeyError:
-                file_entry = self.__files[filename] = SyntaxHighlighterFileEntry(self.__bannedWords)
-            vim_commands += file_entry.ApplyDiff(diff)
-
-        if forceFullUpdate:
-            vim_commands = []
-            self.__ResetHighlights()
-            for f in iteritems(self.__files):
-                file_entry = f[1]
-                vim_commands += file_entry.GetVimCommands()
-
-        p = Profiler()
-        for c in vim_commands:
-            try:
-                vim.command(c)
-            except vim.error as e:
-                logger.Log(log_level_error, 'exec failed ({}): {}'.format(e, c))
-        logger.Log(log_level_error, 'UpdateHighlights: {}'.format(p.Reset()))
-
-    def __ResetHighlights(self):
-        vim.command('silent! syntax clear HideHighlightNamedConstant HideHighlightVariable HideHighlightFunction HideHighlightType HideHighlightKeyword')
+    def __del__(self): # TODO: remove __del__ method
+        try:
+            self.highlighter.RemoveListener(self.__listener)
+        except:
+            self.__logger.Log(hide.LogLevel(hide.LogLevel.Error), '__del__ failed: '.format(traceback.format_exc(e)))
 
 
 class SyntaxHighlighter:
     shared = None
 
-    def __init__(self, highlighter):
-        if not SyntaxHighlighter.shared: # TODO: Reimplement this in a better way
-            SyntaxHighlighter.shared = SyntaxHighlighterShared(highlighter)
+    def __init__(self, project, filename):
+        if not SyntaxHighlighter.shared:
+            SyntaxHighlighter.shared = SyntaxHighlighterShared(project.GetContextUnawareSyntaxHighlighter())
+        self.__logger = hide.NamedLogger('SyntaxHighlighter')
+        self.__mutex = Lock()
+        self.__visibleFiles = set()
+        self.__listener = SyntaxHighlighterFileListener(self.__mutex, self.__visibleFiles)
+        self.highlighterFile = SyntaxHighlighter.shared.highlighter.GetFileContext(filename)
+        self.highlighterFile.AddListener(self.__listener)
+
+    def close(self):
+        try:
+            self.highlighterFile.RemoveListener(self.__listener)
+        except:
+            self.__logger.Log(hide.LogLevel(hide.LogLevel.Error), 'close failed: '.format(traceback.format_exc(e)))
 
     def UpdateHighlights(self, forceFullUpdate):
-        return SyntaxHighlighter.shared.UpdateHighlights(forceFullUpdate)
+        if not forceFullUpdate:
+            return
+
+        logger = self.__logger
+        log_level_error = hide.LogLevel(hide.LogLevel.Error)
+
+        p = Profiler()
+
+        vim_commands = []
+        self.__ResetHighlights()
+        with SyntaxHighlighter.shared.mutex:
+            with self.__mutex:
+                for filename, file_entry in iteritems(SyntaxHighlighter.shared.files):
+                    vim_commands += file_entry.GetCommands()
+
+        logger.Log(log_level_error, 'UpdateHighlights phase 1: {}'.format(p.Reset()))
+
+        for c in vim_commands:
+            try:
+                vim.command(c)
+            except vim.error as e:
+                logger.Log(log_level_error, 'exec failed ({}): {}'.format(e, c))
+
+        logger.Log(log_level_error, 'UpdateHighlights phase 2: {}'.format(p.Reset()))
+
+    def __ResetHighlights(self):
+        vim.command('silent! syntax clear HideHighlightNamedConstant HideHighlightVariable HideHighlightFunction HideHighlightType HideHighlightKeyword')
 

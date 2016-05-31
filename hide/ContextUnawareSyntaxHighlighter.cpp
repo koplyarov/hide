@@ -23,8 +23,8 @@ namespace hide
 
 	HIDE_NAMED_LOGGER(ContextUnawareSyntaxHighlighter)
 
-	ContextUnawareSyntaxHighlighter::ContextUnawareSyntaxHighlighter(const IndexerPtr& indexer)
-		: _whitespaceRegex("\\s"), _indexer(indexer), _indexerListener(new IndexerListener(this))
+	ContextUnawareSyntaxHighlighter::ContextUnawareSyntaxHighlighter(const ProjectFilesPtr& files, const IndexerPtr& indexer)
+		: _whitespaceRegex("\\s"), _files(files), _indexer(indexer), _indexerListener(new IndexerListener(this))
 	{
 		_indexer->AddListener(_indexerListener);
 
@@ -89,6 +89,10 @@ namespace hide
 		s_logger.Info() << "Destroying";
 		_indexer->RemoveListener(_indexerListener);
 	}
+
+
+	ContextUnawareSyntaxHighlighterFilePtr ContextUnawareSyntaxHighlighter::GetFileContext(const std::string& filename)
+	{ return std::make_shared<ContextUnawareSyntaxHighlighterFile>(_files); }
 
 
 	void ContextUnawareSyntaxHighlighter::PopulateState(const IContextUnawareSyntaxHighlighterListenerPtr& listener) const
@@ -165,11 +169,7 @@ namespace hide
 	{
 		auto& fd = _fileData[filename];
 		if (!fd)
-		{
 			fd = std::make_shared<FileData>();
-			Diff<std::string> diff({filename}, {});
-			InvokeListeners(std::bind(&IContextUnawareSyntaxHighlighterListener::OnVisibleFilesChanged, std::placeholders::_1, diff));
-		}
 		return fd;
 	}
 
@@ -224,6 +224,57 @@ namespace hide
 
 		if (wi_it->second.empty())
 			_wordsInfo.erase(wi_it);
+	}
+
+
+	////////////////////////////////////////////////////////////////////////////////
+
+
+	ContextUnawareSyntaxHighlighterFile::ProjectFilesListener::ProjectFilesListener(ContextUnawareSyntaxHighlighterFile* inst)
+		: _inst(inst)
+	{ }
+
+
+	void ContextUnawareSyntaxHighlighterFile::ProjectFilesListener::OnFileAdded(const IFilePtr& file)
+	{
+		HIDE_LOCK(_inst->GetMutex());
+		_inst->_filenames.insert(file->GetFilename());
+		Diff<std::string> diff( { file->GetFilename() }, { } );
+		_inst->InvokeListeners(std::bind(&IContextUnawareSyntaxHighlighterFileListener::OnVisibleFilesChanged, std::placeholders::_1, diff));
+	}
+
+
+	void ContextUnawareSyntaxHighlighterFile::ProjectFilesListener::OnFileRemoved(const IFilePtr& file)
+	{ }
+
+
+	void ContextUnawareSyntaxHighlighterFile::ProjectFilesListener::OnFileModified(const IFilePtr& file)
+	{
+		HIDE_LOCK(_inst->GetMutex());
+		_inst->_filenames.erase(file->GetFilename());
+		Diff<std::string> diff( { }, { file->GetFilename() } );
+		_inst->InvokeListeners(std::bind(&IContextUnawareSyntaxHighlighterFileListener::OnVisibleFilesChanged, std::placeholders::_1, diff));
+	}
+
+
+	ContextUnawareSyntaxHighlighterFile::ContextUnawareSyntaxHighlighterFile(const ProjectFilesPtr& files)
+		: _files(files)
+	{
+		_listener = std::make_shared<ProjectFilesListener>(this);
+		_files->AddListener(_listener);
+	}
+
+
+	ContextUnawareSyntaxHighlighterFile::~ContextUnawareSyntaxHighlighterFile()
+	{ _files->RemoveListener(_listener); }
+
+
+	void ContextUnawareSyntaxHighlighterFile::PopulateState(const IContextUnawareSyntaxHighlighterFileListenerPtr& listener) const
+	{
+		Diff<std::string> diff;
+		for (const auto& fn : _filenames)
+			diff.GetAdded().push_back(fn);
+		listener->OnVisibleFilesChanged(diff);
 	}
 
 }
