@@ -27,8 +27,8 @@ int main()
 		hide::Logger::SetLogLevel(hide::LogLevel::Debug);
 
 		hide::ProjectPtr p = hide::Project::CreateAuto({".*\\bCMakeFiles\\b.*", ".*\\.git\\b.*"});
-
-		std::this_thread::sleep_for(std::chrono::seconds(45));
+		std::this_thread::sleep_for(std::chrono::seconds(10));
+		p.reset();
 
 		hide::Logger::RemoveSink(sink);
 	}

@@ -1,13 +1,18 @@
 #include <hide/utils/FileSystemNotifier.h>
 
-#include <system_error>
 
+#include <system_error>
+#include <algorithm>
+
+#include <boost/filesystem.hpp>
 #include <boost/scope_exit.hpp>
 
 #ifdef HIDE_PLATFORM_POSIX
 #	include <limits.h>
 #	include <signal.h>
 #	include <sys/inotify.h>
+#elif HIDE_PLATFORM_WINDOWS
+#	include <windows.h>
 #endif
 
 #include <hide/utils/ListenersHolder.h>
@@ -149,35 +154,130 @@ namespace hide
 		{ }
 	};
 #elif HIDE_PLATFORM_WINDOWS
+	inline std::wstring Utf8ToWide(const std::string& s)
+	{
+		if (s.empty())
+			return std::wstring();
+
+		std::wstring result;
+		result.resize(s.size());
+		int ret = MultiByteToWideChar(CP_UTF8, 0, s.data(), s.size(), &result[0], result.size());
+		HIDE_CHECK(ret > 0, std::system_error(GetLastError(), std::system_category(), "MultiByteToWideChar failed!"));
+		result.resize(ret);
+		return result;
+	}
+
+	inline std::wstring ToWindowsPath(const std::string& s)
+	{
+		namespace fs = boost::filesystem;
+
+		std::string path_s("\\\\?\\" + fs::canonical(s, fs::current_path()).string());
+		std::replace(path_s.begin(), path_s.end(), '/', '\\'); // Shitty boost::filesystem =(
+
+		return Utf8ToWide(path_s);
+	}
+
 	class FileSystemNotifier::Impl : public ListenersHolder<IFileSysterNotifierListener>
 	{
 		HIDE_NONCOPYABLE(Impl);
 
+		typedef std::map<std::string, HANDLE>	PathToWatchHandle;
+		typedef std::map<HANDLE, std::string>	WatchHandleToPath;
+
+	private:
+		std::recursive_mutex		_mutex;
+		int							_fd;
+		bool						_interrupted;
+		PathToWatchHandle			_pathToWh;
+		WatchHandleToPath			_whToPath;
+
 	public:
 		Impl()
-		{
-			HIDE_THROW(std::runtime_error("Not implemented!"));
-		}
+			: _interrupted(false)
+		{ }
 
 		~Impl()
-		{
-		}
+		{ }
 
 		void Interrupt()
 		{
+			HIDE_LOCK(_mutex);
+			_interrupted = true;
 		}
 
 		void AddPath(const std::string& p)
 		{
+			HIDE_LOCK(_mutex);
+
+			HANDLE h = FindFirstChangeNotificationW(
+					ToWindowsPath(p).c_str(),
+					FALSE, // TODO: Windows supports recursive directory watches, should redesign the FileSystemNotifier
+					FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_LAST_WRITE
+				);
+			HIDE_CHECK(h != INVALID_HANDLE_VALUE, std::system_error(GetLastError(), std::system_category(), "FindFirstChangeNotificationW failed!"));
+
+			_pathToWh[p] = h;
+			_whToPath[h] = p;
 		}
 
 		void RemovePath(const std::string& p)
 		{
+			HIDE_LOCK(_mutex);
+
+			auto ptwh_it = _pathToWh.find(p);
+			HIDE_CHECK(ptwh_it != _pathToWh.end(), std::runtime_error("The path '" + p + "' has not been added!"));
+
+			if (FindCloseChangeNotification(ptwh_it->second))
+				FileSystemNotifier::s_logger.Error() << "FindCloseChangeNotification for '" << p << "' failed!";
+
+			auto whtp_it = _whToPath.find(ptwh_it->second);
+			if (whtp_it != _whToPath.end())
+				_whToPath.erase(whtp_it);
+
+			_pathToWh.erase(ptwh_it);
 		}
 
 		bool ProcessEvents()
 		{
-			return false;
+			std::vector<HANDLE> handles; // TODO: optimize allocations here
+			{
+				HIDE_LOCK(_mutex); // TODO: this is not enough for guarding handles
+				if (_interrupted)
+					return false;
+				HIDE_CHECK(_pathToWh.size() <= MAXIMUM_WAIT_OBJECTS, std::runtime_error("Not implemented!"));
+				handles.reserve(_pathToWh.size());
+				for (auto& p : _pathToWh)
+					handles.push_back(p.second);
+			}
+
+			if (handles.empty())
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+				return true;
+			}
+
+			int ret = WaitForMultipleObjects(handles.size(), handles.data(), FALSE, 1000);
+
+			HIDE_LOCK(_mutex); // TODO: this is not enough for guarding handles
+			if (ret >= (int)WAIT_OBJECT_0 && ret < (int)(WAIT_OBJECT_0 + handles.size()))
+			{
+				auto h = handles[ret - WAIT_OBJECT_0];
+
+				auto whtp_it = _whToPath.find(h);
+				HIDE_CHECK(whtp_it != _whToPath.end(), std::runtime_error("Internal error"));
+
+				FileSystemNotifier::s_logger.Warning() << "Got an event on '" << whtp_it->second << "'";
+				if (FindNextChangeNotification(h) == FALSE)
+					HIDE_THROW(std::system_error(GetLastError(), std::system_category(), "FindNextChangeNotification failed!"));
+
+				//InvokeListeners(std::bind(&IFileSysterNotifierListener::OnEvent, std::placeholders::_1, target, event_type, path));
+			}
+			else if (ret == WAIT_TIMEOUT)
+				return true;
+			else
+				HIDE_THROW(std::system_error(GetLastError(), std::system_category(), "WaitForMultipleObjects failed!"));
+
+			return true;
 		}
 
 	protected:
