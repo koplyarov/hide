@@ -3,10 +3,10 @@
 #include <set>
 
 #include <boost/filesystem.hpp>
-#include <boost/property_tree/json_parser.hpp>
 #include <boost/range/algorithm.hpp>
 #include <boost/scope_exit.hpp>
 
+#include <hide/utils/BoostJsonParser.h>
 #include <hide/utils/FileSystemUtils.h>
 #include <hide/utils/ListenersHolder.h>
 #include <hide/utils/PTree.h>

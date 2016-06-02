@@ -8,12 +8,12 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/optional.hpp>
-#include <boost/property_tree/json_parser.hpp>
 #include <boost/range/algorithm.hpp>
 #include <boost/regex.hpp>
 #include <boost/scope_exit.hpp>
 
 #include <hide/lang_plugins/CTagsInvoker.h>
+#include <hide/utils/BoostJsonParser.h>
 #include <hide/utils/Comparers.h>
 #include <hide/utils/FileSystemUtils.h>
 #include <hide/utils/PTree.h>

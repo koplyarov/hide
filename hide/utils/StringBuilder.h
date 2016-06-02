@@ -45,18 +45,20 @@ namespace hide
 		template < typename T, ObjectType::Enum ObjType_ = ObjectTypeGetter<T>::Value >
 		struct Writer
 		{
-			static void Write(std::stringstream& s, const T& val)
+			template < typename U >
+			static void Write(std::stringstream& s, U&& val)
 			{ s << val; }
 		};
 
 		template < typename T >
-		void WriteToStream(std::stringstream& s, const T& val)
-		{ Writer<T>::Write(s, val); }
+		void WriteToStream(std::stringstream& s, T&& val)
+		{ Writer<typename std::decay<T>::type>::Write(s, val); }
 
 		template < typename T >
 		struct Writer<T, ObjectType::HasToString>
 		{
-			static void Write(std::stringstream& s, const T& val)
+			template < typename U >
+			static void Write(std::stringstream& s, U&& val)
 			{ s << val.ToString(); }
 		};
 
@@ -83,7 +85,8 @@ namespace hide
 		template < typename T >
 		struct Writer<T, ObjectType::HasVisitMembers>
 		{
-			static void Write(std::stringstream& s, const T& val)
+			template < typename U >
+			static void Write(std::stringstream& s, U&& val)
 			{
 				s << "{";
 				bool first = true;
@@ -109,7 +112,8 @@ namespace hide
 		template < typename T >
 		struct Writer<T, ObjectType::Collection>
 		{
-			static void Write(std::stringstream& s, const T& val)
+			template < typename U >
+			static void Write(std::stringstream& s, U&& val)
 			{
 				s << "[";
 				bool first = true;
@@ -126,7 +130,8 @@ namespace hide
 		template < typename T >
 		struct Writer<T, ObjectType::Exception>
 		{
-			static void Write(std::stringstream& s, const T& val)
+			template < typename U >
+			static void Write(std::stringstream& s, U&& val)
 			{ s << boost::diagnostic_information(val); }
 		};
 
@@ -215,7 +220,7 @@ namespace hide
 
 	public:
 		template < typename T >
-		StringBuilder& operator % (const T& val)
+		StringBuilder& operator % (T&& val)
 		{
 			Detail::StringBuilder::WriteToStream(_stream, val);
 			return *this;

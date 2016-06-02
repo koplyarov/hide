@@ -5,10 +5,10 @@
 #include <sstream>
 
 #include <boost/algorithm/string.hpp>
-#include <boost/property_tree/json_parser.hpp>
 #include <boost/regex.hpp>
 
 #include <hide/lang_plugins/CTagsInvoker.h>
+#include <hide/utils/BoostJsonParser.h>
 #include <hide/utils/Comparers.h>
 #include <hide/utils/MembersVisitor.h>
 #include <hide/utils/PTree.h>

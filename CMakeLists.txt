@@ -33,6 +33,8 @@ if (MSVC)
 	add_definitions(-DPy_ENABLE_SHARED)
 	add_definitions(-DSWIG_PYTHON_INTERPRETER_NO_DEBUG)
 	add_definitions(-DHIDE_PLATFORM_WINDOWS=1)
+	add_definitions(-D_SCL_SECURE_NO_WARNINGS)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4250")
 else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 	add_definitions(-std=c++11)
@@ -67,9 +69,9 @@ set(hide_SRCS
 	hide/utils/Thread.cpp
 )
 
-add_library(hide STATIC ${hide_SRCS})
+add_library(hide-core STATIC ${hide_SRCS})
 
-target_link_libraries(hide
+target_link_libraries(hide-core
 	${Boost_PROGRAM_OPTIONS_LIBRARY}
 	${Boost_REGEX_LIBRARY}
 	${Boost_SYSTEM_LIBRARY}
@@ -83,10 +85,10 @@ target_link_libraries(hide
 
 set(hide_test_SRCS test.cpp)
 
-add_executable(hide_test ${hide_test_SRCS})
+add_executable(hide-test ${hide_test_SRCS})
 
-target_link_libraries(hide_test
-	hide
+target_link_libraries(hide-test
+	hide-core
 	${Boost_PROGRAM_OPTIONS_LIBRARY}
 	${Boost_REGEX_LIBRARY}
 	${Boost_SYSTEM_LIBRARY}
@@ -111,4 +113,4 @@ if (NOT MSVC)
 endif()
 
 swig_add_module(hide python ${swig_SRCS})
-swig_link_libraries(hide hide ${PYTHON_LIBRARIES})
+swig_link_libraries(hide hide-core ${PYTHON_LIBRARIES})

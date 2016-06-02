@@ -87,7 +87,7 @@ namespace hide
 		path p = normalized_filepath.parent_path(), stop_at = stopAt;
 		p.normalize();
 		stop_at.normalize();
-		for (; p != stopAt && is_empty(p); p = p.parent_path())
+		for (; p != stopAt && (!exists(p, err) || is_empty(p, err)); p = p.parent_path())
 		{
 			g_fsUtilsLogger.Debug() << "Removing " << p;
 			remove(p, err);

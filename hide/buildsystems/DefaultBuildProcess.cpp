@@ -72,7 +72,7 @@ namespace hide
 				issue_type = BuildIssueType::Warning;
 			else if (m[4] == "error")
 				issue_type = BuildIssueType::Error;
-			issue = std::make_shared<BuildIssue>(Location(m[1], std::stoll(m[2]), std::stoll(m[3])), issue_type, m[5]);
+			issue = std::make_shared<BuildIssue>(Location(m[1], std::stoul(m[2]), std::stoul(m[3])), issue_type, m[5]);
 		}
 
 		ReportLine(BuildLogLine(str, issue));
