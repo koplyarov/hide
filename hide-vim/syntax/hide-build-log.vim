@@ -17,6 +17,7 @@ highlight link buildFailed Error
 highlight link buildInterrupted StatusLine
 
 let bg_color = synIDattr(hlID('FoldColumn'), 'bg#')
-exec 'highlight focusedLine ctermbg='.bg_color.' guibg='.bg_color
+silent! exec 'highlight focusedLine guibg='.bg_color
+silent! exec 'highlight focusedLine ctermbg='.bg_color
 
 let b:current_syntax = "hide-build-log"

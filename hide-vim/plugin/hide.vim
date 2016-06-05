@@ -48,6 +48,7 @@ function s:CreateHideWindow()
 	let curWin = winnr()
 	try
 		botright 10split
+		set wfh
 		let w:isHideWindow = 1
 		return winnr()
 	finally

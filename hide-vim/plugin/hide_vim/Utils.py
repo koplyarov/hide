@@ -1,2 +1,5 @@
+def EscapePathForVim(p):
+    return p.replace('\\', '\\\\')
+
 def LocationAsVimDictionary(l):
-    return '{ "filename": "' + l.GetFilename() + '", "line": ' + str(l.GetLine()) + ', "column": ' + str(l.GetColumn()) + ' }'
+    return '{{ "filename": "{}", "line": {}, "column": {} }}'.format(EscapePathForVim(l.GetFilename()), int(l.GetLine()), int(l.GetColumn()))
