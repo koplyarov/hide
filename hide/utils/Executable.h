@@ -8,6 +8,8 @@
 
 #if HIDE_PLATFORM_POSIX
 #	include <sys/types.h>
+#elif HIDE_PLATFORM_WINDOWS
+#	include <windows.h>
 #endif
 
 #include <hide/utils/IPipeReadEndHandler.h>
@@ -57,6 +59,8 @@ namespace hide
 
 #if HIDE_PLATFORM_POSIX
 		pid_t						_pid;
+#elif HIDE_PLATFORM_WINDOWS
+		PROCESS_INFORMATION			_pi;
 #endif
 
 		boost::optional<int>		_retCode;

@@ -217,7 +217,7 @@ namespace hide
 
 	HIDE_NAMED_LOGGER(Indexer);
 
-	const std::string Indexer::s_indexDirectory(".hide/index");
+	const boost::filesystem::path Indexer::s_indexDirectory(boost::filesystem::path(".hide") / "index");
 
 	Indexer::Indexer(const ProjectFilesPtr& files)
 		: _working(true), _files(files)

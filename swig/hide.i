@@ -1,5 +1,6 @@
 %module(directors="1") hide
 
+%include <stdint.i>
 %include <exception.i>
 %include <std_map.i>
 %include <std_shared_ptr.i>

@@ -67,11 +67,11 @@ namespace hide
 		HIDE_DECLARE_PTR(FilesListener);
 
 	private:
-		static NamedLogger					s_logger;
-		static const std::string			s_indexDirectory;
-		mutable std::mutex					_mutex;
-		mutable std::condition_variable		_condVar;
-		bool								_working;
+		static NamedLogger						s_logger;
+		static const boost::filesystem::path	s_indexDirectory;
+		mutable std::mutex						_mutex;
+		mutable std::condition_variable			_condVar;
+		bool									_working;
 		QueriesQueue						_queries;
 		EventQueue							_events;
 		ProjectFilesPtr						_files;

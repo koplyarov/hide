@@ -5,6 +5,7 @@ import time
 import threading
 
 sys.path.insert(0, './build/bin')
+sys.path.insert(0, './build/bin/Debug')
 import hide
 
 class LoggerSink(hide.ILoggerSink):
