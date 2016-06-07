@@ -6,9 +6,15 @@ call g:buildsystem.setAvailableBuildConfigs( { 'host': CMakeBuildConfig(8, './bu
 au BufNew *.h,*.hpp,*.c,*.cpp set complete-=i
 
 if exists('g:load_hide_plugin') && g:load_hide_plugin == 1
-	python import sys
-	python sys.path.insert(0, 'build\\bin')
-	python sys.path.insert(0, 'build\\bin\\Debug')
+	if has('python3')
+		python3 import sys
+		python3 sys.path.insert(0, 'build/bin')
+		python3 sys.path.insert(0, 'build/bin/Debug')
+	else
+		python import sys
+		python sys.path.insert(0, 'build/bin')
+		python sys.path.insert(0, 'build/bin/Debug')
+	end
 	let g:timer._handlers = {}
 	set updatetime=1000
 	set runtimepath+=./hide-vim
