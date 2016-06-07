@@ -34,6 +34,10 @@ namespace hide
 			_langPlugins{ std::make_shared<cpp::LanguagePlugin>() },
 			_files(new ProjectFiles)
 	{
+		RegexesVector skip_list(skipList);
+		skip_list.push_back(boost::regex("^(.*/)?\\.hide\\b(/.*)?$"));
+		_fsMonitor = std::make_shared<fs::FsMonitor>(".", skip_list);
+
 		_fsNotifier.reset(new FileSystemNotifier());
 		_fsNotifierListener.reset(new FileSystemNotifierListener(this));
 		_fsNotifier->AddListener(_fsNotifierListener);

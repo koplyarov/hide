@@ -2,21 +2,22 @@
 #define HIDE_HIDE_H
 
 
-#include <map>
-#include <string>
-
-#include <boost/filesystem.hpp>
-#include <boost/regex.hpp>
-
 #include <hide/Buffer.h>
 #include <hide/ContextUnawareSyntaxHighlighter.h>
 #include <hide/IBuildSystem.h>
 #include <hide/ILanguagePlugin.h>
 #include <hide/Indexer.h>
 #include <hide/ProjectFiles.h>
+#include <hide/fs/FsMonitor.h>
 #include <hide/utils/FileSystemNotifier.h>
 #include <hide/utils/NamedLogger.h>
 #include <hide/utils/Utils.h>
+
+#include <boost/filesystem.hpp>
+#include <boost/regex.hpp>
+
+#include <map>
+#include <string>
 
 
 namespace hide
@@ -41,6 +42,7 @@ namespace hide
 		static NamedLogger					s_logger;
 
 		RegexesVector						_skipList;
+		fs::FsMonitorPtr					_fsMonitor;
 		IBuildSystemProberPtrArray			_buildSystemProbers;
 		ILanguagePluginPtrArray				_langPlugins;
 		IBuildSystemPtr						_currentBuildSystem;
