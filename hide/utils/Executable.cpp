@@ -238,6 +238,7 @@ namespace hide
 			)
 	{ }
 
+#if HIDE_PLATFORM_WINDOWS
 	inline std::string Escape(const std::string& s)
 	{
 		return s;
@@ -255,6 +256,7 @@ namespace hide
 		result.resize(ret);
 		return result;
 	}
+#endif
 
 	Executable::Executable(const std::string& executable, const StringArray& parameters, const IPipeReadEndHandlerPtr& stdoutHandler, const IPipeReadEndHandlerPtr& stderrHandler) // TODO: implement async invokation
 	{
