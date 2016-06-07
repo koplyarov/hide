@@ -56,8 +56,7 @@ def get_includes_recursive(fn, include_stack = set()):
 
 file_to_syms = {}
 
-#public_regex = re.compile(r'^([^\t]+)\t.*access:public.*')
-public_regex = re.compile(r'^([^\t]+)\t.*')
+tag_regex = re.compile(r'^([^\t]+)\t.*;"\t([^\t]+).*')
 stupid_macro_regex = re.compile(r'^[A-Z0-9_]+_\d+(_[A-Z])?$')
 intel_simd_regex = re.compile(r'^_mm\d*_.*$')
 detail_shit_regex = re.compile(r'^__.*$')
@@ -66,37 +65,30 @@ def get_file_syms(filename):
         return file_to_syms[filename]
     except KeyError:
         raw_syms = subprocess.check_output(['ctags', '-f-', '--fields=+a', '--c-kinds=+p', filename]).split('\n')
-        syms = set()
+        syms = defaultdict(lambda: [])
         for s in raw_syms:
-            m = public_regex.match(s)
+            m = tag_regex.match(s)
             if m:
                 sym_name = m.group(1)
-                if 'access:private' in s:
-                    #print "Skipping private {}".format(m.group(1))
+                if 'access:private' in s or stupid_macro_regex.match(sym_name) or intel_simd_regex.match(sym_name) or detail_shit_regex.match(sym_name):
                     continue
-                if stupid_macro_regex.match(sym_name):
-                    #print "Nein! {}".format(sym_name)
-                    continue
-                if intel_simd_regex.match(sym_name):
-                    #print "Nein! {}".format(sym_name)
-                    continue
-                if detail_shit_regex.match(sym_name):
-                    #print "Nein! {}".format(sym_name)
-                    continue
-                syms.add(sym_name)
+                sym_type = m.group(2)
+                syms[sym_name].append((sym_type, filename))
         file_to_syms[filename] = syms
         return syms
 
 visited_includes_syms = {}
 def get_visible_syms(filename):
     path = os.path.normpath(filename)
-    res = copy.copy(get_file_syms(path))
+    res = defaultdict(lambda: [])
+    res.update(get_file_syms(path))
     for i in get_includes_recursive(path):
         try:
             inc_syms = visited_includes_syms[i]
         except KeyError:
             inc_syms = visited_includes_syms[i] = get_file_syms(i)
-        res.update(inc_syms)
+        for k, v in inc_syms.items():
+            res[k] += v
     return res
 
 parser = argparse.ArgumentParser(description='Symbols visibility analyzer')
@@ -104,7 +96,26 @@ parser.add_argument('--show-visible', dest='show_visible', help='AZAZA')
 
 args = parser.parse_args()
 if args.show_visible:
-    for s in get_visible_syms(args.show_visible):
+    syms = get_visible_syms(args.show_visible).items()
+
+    unique_syms_count = 0
+    unique_syms = defaultdict(lambda: [])
+    for k, v in syms:
+        if len(v) == 1:
+            unique_syms[v[0][1]].append(k)
+            unique_syms_count += 1
+
+    print "### {} unique ###".format(unique_syms_count)
+    for filename in sorted(unique_syms.keys()):
+        print "\n# {}".format(filename)
+        file_syms = unique_syms[filename]
+        for s in sorted(file_syms):
+            print s
+
+    other_syms = [ k for k, v in syms if len(v) != 1]
+    print "\n\n\n### {} other ###".format(len(other_syms))
+    other_syms = sorted([k for k, v in syms if len(v) != 1])
+    for s in other_syms:
         print s
 else:
     results = defaultdict(lambda: 0)
