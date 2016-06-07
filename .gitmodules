@@ -1,3 +1,6 @@
 [submodule "thirdparty/rethread"]
 	path = thirdparty/rethread
 	url = https://github.com/koplyarov/rethread.git
+[submodule "thirdparty/wigwag"]
+	path = thirdparty/wigwag
+	url = https://github.com/koplyarov/wigwag.git
