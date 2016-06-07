@@ -1,0 +1,3 @@
+[submodule "thirdparty/rethread"]
+	path = thirdparty/rethread
+	url = https://github.com/koplyarov/rethread.git
