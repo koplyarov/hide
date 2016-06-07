@@ -2,10 +2,11 @@
 #define HIDE_UTILS_FILESYSTEMNOTIFIER_H
 
 
-#include <mutex>
-
 #include <hide/utils/NamedLogger.h>
 #include <hide/utils/Utils.h>
+#include <hide/utils/rethread.h>
+
+#include <mutex>
 
 
 namespace hide
@@ -44,7 +45,7 @@ namespace hide
 	private:
 		static NamedLogger		s_logger;
 		ImplPtr					_impl;
-		std::thread				_thread;
+		thread					_thread;
 
 	public:
 		FileSystemNotifier();

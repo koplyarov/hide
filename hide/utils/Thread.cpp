@@ -2,6 +2,7 @@
 
 #include <hide/utils/NamedLogger.h>
 #include <hide/utils/StringBuilder.h>
+#include <hide/utils/rethread.h>
 
 
 namespace hide
@@ -17,12 +18,12 @@ namespace hide
 			return thread_name;
 		}
 
-		static void ThreadFuncWrapper(const std::string& threadName, const std::function<void()>& threadFunc)
+		static void ThreadFuncWrapper(const std::string& threadName, const std::function<void(const cancellation_token&)>& threadFunc, const cancellation_token& t)
 		{
 			GetThreadNameRef() = threadName;
 
 			try
-			{ threadFunc(); }
+			{ threadFunc(t); }
 			catch (const std::exception& ex)
 			{ s_logger.Error() << "Uncaught exception in thread function: " << ex; }
 		}
@@ -41,7 +42,7 @@ namespace hide
 	{ ThreadUtils::GetThreadNameRef() = threadName; }
 
 
-	std::thread MakeThread(const std::string& threadName, const std::function<void()>& threadFunc)
-	{ return std::thread(std::bind(&ThreadUtils::ThreadFuncWrapper, threadName, threadFunc)); }
+	thread MakeThread(const std::string& threadName, const std::function<void(const cancellation_token&)>& threadFunc)
+	{ return thread(std::bind(&ThreadUtils::ThreadFuncWrapper, threadName, threadFunc, std::placeholders::_1)); }
 
 }

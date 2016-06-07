@@ -2,18 +2,19 @@
 #define HIDE_INDEXER_H
 
 
-#include <condition_variable>
-#include <mutex>
-#include <queue>
-
-#include <boost/filesystem.hpp>
-
 #include <hide/IIndexQuery.h>
 #include <hide/IIndexable.h>
 #include <hide/ProjectFiles.h>
 #include <hide/utils/Comparers.h>
 #include <hide/utils/Diff.h>
 #include <hide/utils/NamedLogger.h>
+#include <hide/utils/rethread.h>
+
+#include <boost/filesystem.hpp>
+
+#include <condition_variable>
+#include <mutex>
+#include <queue>
 
 
 namespace hide
@@ -79,7 +80,7 @@ namespace hide
 		StringToIndexEntry					_symbolNameToSymbol;
 		StringToIndexEntry					_fullSymbolNameToSymbol;
 		PartialIndexes						_partialIndexes;
-		std::thread							_thread;
+		thread								_thread;
 
 	public:
 		Indexer(const ProjectFilesPtr& files);

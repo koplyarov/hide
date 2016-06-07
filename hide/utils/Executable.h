@@ -1,22 +1,24 @@
 #ifndef HIDE_UTILS_EXECUTABLE_H
 #define HIDE_UTILS_EXECUTABLE_H
 
-#include <functional>
-#include <thread>
-
-#include <boost/optional.hpp>
-
-#if HIDE_PLATFORM_POSIX
-#	include <sys/types.h>
-#elif HIDE_PLATFORM_WINDOWS
-#	include <windows.h>
-#endif
 
 #include <hide/utils/IPipeReadEndHandler.h>
 #include <hide/utils/IPipeWriteEnd.h>
 #include <hide/utils/ListenersHolder.h>
 #include <hide/utils/NamedLogger.h>
 #include <hide/utils/Utils.h>
+#include <hide/utils/rethread.h>
+
+#include <boost/optional.hpp>
+
+#include <functional>
+
+
+#if HIDE_PLATFORM_POSIX
+#	include <sys/types.h>
+#elif HIDE_PLATFORM_WINDOWS
+#	include <windows.h>
+#endif
 
 
 namespace hide
@@ -67,7 +69,7 @@ namespace hide
 		IPipeWriteEndPtr			_stdin;
 		PipeReadEndPtr				_stdout;
 		PipeReadEndPtr				_stderr;
-		std::thread					_thread;
+		thread						_thread;
 
 	public:
 		Executable(const std::string& executable, const StringArray& parameters, const IPipeReadEndHandlerPtr& stdoutHandler, const IPipeReadEndHandlerPtr& stderrHandler);

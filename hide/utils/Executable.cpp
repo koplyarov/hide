@@ -75,7 +75,7 @@ namespace hide
 		static NamedLogger		s_logger;
 		int						_fd;
 		IPipeReadEndHandlerPtr	_handler;
-		std::thread				_thread;
+		thread					_thread;
 
 	public:
 		PipeReadEnd(int fd, const IPipeReadEndHandlerPtr& handler)
@@ -178,7 +178,7 @@ namespace hide
 		static NamedLogger		s_logger;
 		HANDLE					_handle;
 		IPipeReadEndHandlerPtr	_handler;
-		std::thread				_thread;
+		thread					_thread;
 
 	public:
 		PipeReadEnd(HANDLE handle, const IPipeReadEndHandlerPtr& handler)

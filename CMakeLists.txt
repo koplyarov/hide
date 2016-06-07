@@ -26,6 +26,8 @@ include_directories(${PYTHON_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${LibClang_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/rethread)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/wigwag/include)
 
 if (MSVC)
 	add_definitions(-DBOOST_ALL_NO_LIB)
